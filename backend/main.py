@@ -10,14 +10,17 @@ print("Reached species section")
 @app.get("/species")
 def species():
     return {
-        "Yellow" : "sup"
+        "number of species documented" : 1,
+        "species": [
+            "Cat"
+            ]
     }
 @app.get("/species/cat")
 def cat():
     return {
         "type": "animal",
         "name": "cat",
-        "species": "felix",
+        "species": "Felis catus",
         "description": "A small carnivoure animal, coated with fur and mostly domesticated"
     }
 
