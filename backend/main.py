@@ -2,27 +2,39 @@ from fastapi import FastAPI
 
 app = FastAPI() 
 
+species_catalogue = {
+    "cat": {
+        "Name": "Cat",
+        "Type": "Animal",
+        "Species": "Felis catus",
+        "Description": "A small carnivorous animal, coated with fur and mostly domesticated"
+    },
+
+    "dog": {
+        "Name": "Dog",
+        "Type": "Animal",
+        "Species": "Canis lupus",
+        "Description": "A domesticated carnivorous mammal, known for its loyalty and trainability"
+    }
+}
 @app.get("/")
 def root():
     return {"message": "Camp's standing"}
 
-print("Reached species section")
+
 @app.get("/species")
 def species():
     return {
-        "number of species documented" : 1,
-        "species": [
-            "Cat"
-            ]
+        "number of species documented" : len(species_catalogue),
+        "species": list(species_catalogue.keys())
     }
-@app.get("/species/cat")
-def cat():
-    return {
-        "type": "animal",
-        "name": "cat",
-        "species": "Felis catus",
-        "description": "A small carnivoure animal, coated with fur and mostly domesticated"
-    }
+
+@app.get("/species/{species_name}")
+def species_name(species_name):
+    
+    species_name = species_name.lower()
+    return species_catalogue.get(species_name, {"error": "Species not found"})
+
 
 @app.get("/charter")
 def charter():
