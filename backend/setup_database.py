@@ -67,6 +67,13 @@ cursor.execute("""
     );
 """)
 
+cursor.execute("""
+    SELECT name, lifespan FROM species;
+""")
+# Fetches all the results from the executed query
+results = cursor.fetchall()
+print(results)
+
 # Commits/saves all the changes
 connection.commit()
 # Closing the database connection
