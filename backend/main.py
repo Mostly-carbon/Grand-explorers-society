@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 import sqlite3
-import os
 
 # Create the FastAPI application
 app = FastAPI()
@@ -18,21 +17,16 @@ def species():
 
     # Open a connection to the explorer database
     connect = sqlite3.connect("explorer.db")
-    print(os.path.abspath("explorer.db"))
     cursor = connect.cursor()
 
     # Retrieve every species stored in the database
     cursor.execute("SELECT * FROM species;")
-    
-    # Store all returned rows in a Python list
     results = cursor.fetchall()
 
-    # This list will hold the JSON-friendly species dictionaries
+    # Convert database rows into JSON-friendly dictionaries
     species_list = []
 
-    # Convert each database row into a dictionary
     for row in results:
-
         species_data = {
             "name": row[1],
             "scientific_name": row[2],
@@ -44,13 +38,11 @@ def species():
             "description": row[8]
         }
 
-        # Add the converted species to the response list
         species_list.append(species_data)
 
-    # Close the database connection after all data has been retrieved
+    # Close the database connection
     connect.close()
 
-    # Return the final JSON response to the client
     return {
         "number_of_species": len(species_list),
         "species": species_list
@@ -64,9 +56,8 @@ def get_species(species_name):
     # Open a connection to the explorer database
     connect = sqlite3.connect("explorer.db")
     cursor = connect.cursor()
-    print(os.path.abspath("explorer.db"))
 
-    # Search the database for species with the requested name
+    # Search the database for matching species
     cursor.execute(
         "SELECT * FROM species WHERE name = ?;",
         (species_name,)
@@ -74,11 +65,9 @@ def get_species(species_name):
 
     results = cursor.fetchall()
 
-    # Convert matching database rows into JSON-friendly dictionaries
     species_name_list = []
 
     for row in results:
-
         species_data = {
             "name": row[1],
             "scientific_name": row[2],
@@ -95,7 +84,6 @@ def get_species(species_name):
     # Close the database connection
     connect.close()
 
-    # Return all matching species
     return {
         "number_of_matches": len(species_name_list),
         "species": species_name_list

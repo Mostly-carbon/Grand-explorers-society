@@ -1,14 +1,11 @@
-# This file is to setup and create the database for the first time.
+# This file creates the database and its initial data.
 import sqlite3
-import os
 
-# Connect to the society archive...
-connection = sqlite3.connect('explorer.db')
-print(os.path.abspath("explorer.db"))
-# ...and create a cursor to execute the SQL statements
+# Connect to the society archive
+connection = sqlite3.connect("explorer.db")
 cursor = connection.cursor()
 
-# Creates the table if it doesn't exist yet
+# Create the species table if it doesn't already exist
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS species (
         id INTEGER PRIMARY KEY,
@@ -22,7 +19,8 @@ cursor.execute("""
         description TEXT
     );
 """)
-# Inserts initial data into the species table
+
+# Insert the first documented species
 cursor.execute("""
     INSERT INTO species (
         name,
@@ -45,6 +43,7 @@ cursor.execute("""
         'A small carnivorous mammal'
     );
 """)
+
 cursor.execute("""
     INSERT INTO species (
         name,
@@ -56,7 +55,6 @@ cursor.execute("""
         diet,
         description
     )
-    
     VALUES (
         'dog',
         'Canis lupus familiaris',
@@ -69,16 +67,8 @@ cursor.execute("""
     );
 """)
 
-cursor.execute("""
-    SELECT name, lifespan FROM species;
-""")
-# Fetches all the results from the executed query
-results = cursor.fetchall()
-print(results)
-
-# Commits/saves all the changes
+# Save the changes and close the connection
 connection.commit()
-# Closing the database connection
 connection.close()
 
 print("Database was created successfully :)")
