@@ -1,8 +1,10 @@
 # This file is to setup and create the database for the first time.
 import sqlite3
+import os
 
 # Connect to the society archive...
 connection = sqlite3.connect('explorer.db')
+print(os.path.abspath("explorer.db"))
 # ...and create a cursor to execute the SQL statements
 cursor = connection.cursor()
 
