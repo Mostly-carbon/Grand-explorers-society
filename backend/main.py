@@ -1,8 +1,21 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 import sqlite3
 
 # Create the FastAPI application
 app = FastAPI()
+
+
+# Data model used for creating and updating species
+class Species(BaseModel):
+    name: str
+    scientific_name: str
+    kingdom: str
+    rarity: str
+    habitat: str
+    lifespan: str
+    diet: str
+    description: str
 
 
 # Root endpoint - confirms that the API is running
@@ -49,6 +62,83 @@ def species():
     }
 
 
+# Adds a new species to the database
+@app.post("/species")
+def add_species(species: Species):
+
+    # Open a connection to the explorer database
+    connect = sqlite3.connect("explorer.db")
+    cursor = connect.cursor()
+
+    # Insert the new species into the database
+    cursor.execute(
+        """
+        INSERT INTO species
+        (name, scientific_name, kingdom, rarity, habitat, lifespan, diet, description)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        """,
+        (
+            species.name,
+            species.scientific_name,
+            species.kingdom,
+            species.rarity,
+            species.habitat,
+            species.lifespan,
+            species.diet,
+            species.description
+        )
+    )
+
+    # Commit the changes and close the database connection
+    connect.commit()
+    connect.close()
+
+    return {"message": f"Species '{species.name}' has been documented"}
+
+
+# Updates an existing species in the database
+@app.put("/species/{species_name}")
+def update_species(species_name: str, species: Species):
+
+    # Open a connection to the explorer database
+    connect = sqlite3.connect("explorer.db")
+    cursor = connect.cursor()
+
+    # Update the matching species
+    cursor.execute(
+        """
+        UPDATE species
+        SET
+            name = ?,
+            scientific_name = ?,
+            kingdom = ?,
+            rarity = ?,
+            habitat = ?,
+            lifespan = ?,
+            diet = ?,
+            description = ?
+        WHERE name = ?;
+        """,
+        (
+            species.name,
+            species.scientific_name,
+            species.kingdom,
+            species.rarity,
+            species.habitat,
+            species.lifespan,
+            species.diet,
+            species.description,
+            species_name
+        )
+    )
+
+    # Commit the changes and close the database connection
+    connect.commit()
+    connect.close()
+
+    return {"message": f"Species '{species.name}' has been updated"}
+
+
 # Returns all species matching the requested name
 @app.get("/species/{species_name}")
 def get_species(species_name):
@@ -65,6 +155,7 @@ def get_species(species_name):
 
     results = cursor.fetchall()
 
+    # Convert matching rows into JSON-friendly dictionaries
     species_name_list = []
 
     for row in results:
