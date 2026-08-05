@@ -6,7 +6,7 @@ import sqlite3
 app = FastAPI()
 
 
-# Data model used for creating and updating species
+# Data model used when creating or updating a species
 class Species(BaseModel):
     name: str
     scientific_name: str
@@ -24,7 +24,7 @@ def root():
     return {"message": "Camp's standing"}
 
 
-# Returns all documented species from the SQLite database
+# Returns every documented species
 @app.get("/species")
 def species():
 
@@ -32,7 +32,7 @@ def species():
     connect = sqlite3.connect("explorer.db")
     cursor = connect.cursor()
 
-    # Retrieve every species stored in the database
+    # Retrieve every species from the database
     cursor.execute("SELECT * FROM species;")
     results = cursor.fetchall()
 
@@ -89,14 +89,16 @@ def add_species(species: Species):
         )
     )
 
-    # Commit the changes and close the database connection
+    # Save the changes
     connect.commit()
+
+    # Close the database connection
     connect.close()
 
     return {"message": f"Species '{species.name}' has been documented"}
 
 
-# Updates an existing species in the database
+# Updates an existing species
 @app.put("/species/{species_name}")
 def update_species(species_name: str, species: Species):
 
@@ -132,11 +134,36 @@ def update_species(species_name: str, species: Species):
         )
     )
 
-    # Commit the changes and close the database connection
+    # Save the changes
     connect.commit()
+
+    # Close the database connection
     connect.close()
 
     return {"message": f"Species '{species.name}' has been updated"}
+
+
+# Deletes a species from the database
+@app.delete("/species/{species_name}")
+def delete_species(species_name: str):
+
+    # Open a connection to the explorer database
+    connect = sqlite3.connect("explorer.db")
+    cursor = connect.cursor()
+
+    # Delete the matching species
+    cursor.execute(
+        "DELETE FROM species WHERE name = ?;",
+        (species_name,)
+    )
+
+    # Save the changes
+    connect.commit()
+
+    # Close the database connection
+    connect.close()
+
+    return {"message": f"Species '{species_name}' has been deleted"}
 
 
 # Returns all species matching the requested name
