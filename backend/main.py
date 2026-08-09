@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import sqlite3
 
@@ -70,24 +70,29 @@ def add_species(species: Species):
     connect = sqlite3.connect("explorer.db")
     cursor = connect.cursor()
 
-    # Insert the new species into the database
-    cursor.execute(
-        """
-        INSERT INTO species
-        (name, scientific_name, kingdom, rarity, habitat, lifespan, diet, description)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-        """,
-        (
-            species.name,
-            species.scientific_name,
-            species.kingdom,
-            species.rarity,
-            species.habitat,
-            species.lifespan,
-            species.diet,
-            species.description
+    try:
+        # Insert the new species into the database
+        cursor.execute(
+            """
+            INSERT INTO species
+            (name, scientific_name, kingdom, rarity, habitat, lifespan, diet, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            (
+                species.name,
+                species.scientific_name,
+                species.kingdom,
+                species.rarity,
+                species.habitat,
+                species.lifespan,
+                species.diet,
+                species.description
+            )
         )
-    )
+
+    except sqlite3.IntegrityError:
+        connect.close()
+        raise HTTPException(status_code=409, detail=f"Species '{species.scientific_name}' already exists")
 
     # Save the changes
     connect.commit()
@@ -134,6 +139,11 @@ def update_species(species_name: str, species: Species):
         )
     )
 
+    if cursor.rowcount == 0:
+        connect.close()
+        raise HTTPException(status_code=404, detail=f"Species '{species_name}' not found")
+
+
     # Save the changes
     connect.commit()
 
@@ -156,6 +166,10 @@ def delete_species(species_name: str):
         "DELETE FROM species WHERE name = ?;",
         (species_name,)
     )
+
+    if cursor.rowcount == 0:
+        connect.close()
+        raise HTTPException(status_code=404, detail=f"Species '{species_name}' not found")
 
     # Save the changes
     connect.commit()
