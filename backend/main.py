@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import sqlite3
-from database import get_db_connection, read_from_database, write_to_database 
+from database import read_from_database, write_to_database 
 
 # Create the FastAPI application
 app = FastAPI()
