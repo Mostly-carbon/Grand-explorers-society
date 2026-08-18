@@ -14,5 +14,4 @@ def root():
 
 # Start the server with:
 # python -m uvicorn main:app --reload
-#...
-# Just make sure you are in the backend directory (cd backend)
+# **Just make sure you are in the backend directory (cd backend)

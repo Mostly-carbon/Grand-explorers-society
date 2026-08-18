@@ -37,12 +37,63 @@ def get_species():
         "species": species_list
     }
 
+@router.get("/search")
+def search_species(name: str = None, kingdom: str = None, rarity: str = None, habitat: str = None, diet: str = None):
 
-# Returns all species matching the requested name
+    query = "SELECT * FROM species"
+    parameters = []
+    conditions = []
+
+    if name is not None:
+        conditions.append("name COLLATE NOCASE = ?")
+        parameters.append(name)
+
+    if kingdom is not None:
+        conditions.append("kingdom COLLATE NOCASE = ?")
+        parameters.append(kingdom)
+
+    if rarity is not None:
+        conditions.append("rarity COLLATE NOCASE = ?")
+        parameters.append(rarity)
+
+    if habitat is not None:
+        conditions.append("habitat COLLATE NOCASE = ?")
+        parameters.append(habitat)
+
+    if diet is not None:
+        conditions.append("diet COLLATE NOCASE = ?")
+        parameters.append(diet)
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    results = read_from_database(query, parameters)
+
+    species_list = []
+
+    for row in results:
+        species_data = {
+            "name": row[1],
+            "scientific_name": row[2],
+            "kingdom": row[3],
+            "rarity": row[4],
+            "habitat": row[5],
+            "lifespan": row[6],
+            "diet": row[7],
+            "description": row[8]
+        }
+
+        species_list.append(species_data)
+
+    return {
+        "number_of_matches": len(species_list),
+        "species": species_list
+    }
+
 @router.get("/{species_name}")
 def get_species_by_name(species_name):
 
-    results = read_from_database("SELECT * FROM species WHERE name = ?",
+    results = read_from_database("SELECT * FROM species WHERE name COLLATE NOCASE = ?",
                                 (species_name,))
     
     # Convert matching rows into JSON-friendly dictionaries
