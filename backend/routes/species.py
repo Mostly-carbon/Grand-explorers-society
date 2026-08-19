@@ -38,15 +38,19 @@ def get_species():
     }
 
 @router.get("/search")
-def search_species(name: str = None, kingdom: str = None, rarity: str = None, habitat: str = None, diet: str = None):
+def search_species(name: str = None, scientific_name: str = None, kingdom: str = None, rarity: str = None, habitat: str = None, diet: str = None):
 
     query = "SELECT * FROM species"
     parameters = []
     conditions = []
 
     if name is not None:
-        conditions.append("name COLLATE NOCASE = ?")
-        parameters.append(name)
+        conditions.append("name COLLATE NOCASE LIKE ?")
+        parameters.append(f"%{name}%")
+
+    if scientific_name is not None:
+        conditions.append("scientific_name COLLATE NOCASE LIKE ?")
+        parameters.append(f"%{scientific_name}%")
 
     if kingdom is not None:
         conditions.append("kingdom COLLATE NOCASE = ?")
@@ -57,8 +61,8 @@ def search_species(name: str = None, kingdom: str = None, rarity: str = None, ha
         parameters.append(rarity)
 
     if habitat is not None:
-        conditions.append("habitat COLLATE NOCASE = ?")
-        parameters.append(habitat)
+        conditions.append("habitat COLLATE NOCASE LIKE ?")
+        parameters.append(f"%{habitat}%")
 
     if diet is not None:
         conditions.append("diet COLLATE NOCASE = ?")
