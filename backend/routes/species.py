@@ -12,8 +12,7 @@ router = APIRouter(prefix="/species")
 @router.get("/")
 def get_species():
 
-    
-    results = read_from_database("SELECT * FROM species", ())
+    results = read_from_database("SELECT * FROM species ORDER BY name COLLATE NOCASE ASC", ())
         
     # Convert database rows into JSON-friendly dictionaries
     species_list = []
@@ -38,7 +37,16 @@ def get_species():
     }
 
 @router.get("/search")
-def search_species(name: str = None, scientific_name: str = None, kingdom: str = None, rarity: str = None, habitat: str = None, diet: str = None):
+def search_species(
+    name: str = None,
+    scientific_name: str = None,
+    kingdom: str = None,
+    rarity: str = None,
+    habitat: str = None,
+    diet: str = None,
+    sort: str = None,
+    order: str = "asc"
+):
 
     query = "SELECT * FROM species"
     parameters = []
@@ -70,6 +78,26 @@ def search_species(name: str = None, scientific_name: str = None, kingdom: str =
 
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
+
+    sort_options = {
+            "name": "name",
+            "scientific_name": "scientific_name",
+            "habitat": "habitat"
+        }
+    
+    if sort is not None:
+        try:
+            sort_column = sort_options[sort]
+        except KeyError:
+            raise HTTPException(status_code=400, detail=f"Invalid sort option: {sort}. Valid options are: {', '.join(sort_options.keys())}")
+    else:
+        sort_column = "name"
+    
+    query += f" ORDER BY {sort_column} COLLATE NOCASE"
+    if order.lower() == "desc":
+        query += " DESC "
+    else:
+        query += " ASC "
 
     results = read_from_database(query, parameters)
 
