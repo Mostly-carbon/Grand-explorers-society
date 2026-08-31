@@ -1,8 +1,11 @@
+# Handles API routes for creating, reading, updating, deleting, searching, and sorting species.
+
 from fastapi import APIRouter
 from fastapi import HTTPException
 from database import read_from_database, write_to_database
 import sqlite3
 from models import Species
+from services.species_service import species_from_row
 
 
 router = APIRouter(prefix="/species")
@@ -17,22 +20,7 @@ def get_species():
         ()
     )
 
-    species_list = []
-
-    for row in results:
-        species_data = {
-            "id": row[0],
-            "name": row[1],
-            "scientific_name": row[2],
-            "kingdom": row[3],
-            "rarity": row[4],
-            "habitat": row[5],
-            "lifespan": row[6],
-            "diet": row[7],
-            "description": row[8]
-        }
-
-        species_list.append(species_data)
+    species_list = [species_from_row(row) for row in results]
 
     return {
         "number_of_species": len(species_list),
@@ -110,22 +98,7 @@ def search_species(
 
     results = read_from_database(query, parameters)
 
-    species_list = []
-
-    for row in results:
-        species_data = {
-            "id": row[0],
-            "name": row[1],
-            "scientific_name": row[2],
-            "kingdom": row[3],
-            "rarity": row[4],
-            "habitat": row[5],
-            "lifespan": row[6],
-            "diet": row[7],
-            "description": row[8]
-        }
-
-        species_list.append(species_data)
+    species_list = [species_from_row(row) for row in results]
 
     return {
         "number_of_matches": len(species_list),
@@ -142,27 +115,13 @@ def get_species_by_id(species_id: int):
         (species_id,)
     )
 
-    species_list = []
+    if not results:
+        raise HTTPException(
+            status_code=404,
+            detail="Species with this id doesn't exist"
+        )
 
-    for row in results:
-        species_data = {
-            "id": row[0],
-            "name": row[1],
-            "scientific_name": row[2],
-            "kingdom": row[3],
-            "rarity": row[4],
-            "habitat": row[5],
-            "lifespan": row[6],
-            "diet": row[7],
-            "description": row[8]
-        }
-
-        species_list.append(species_data)
-
-    return {
-        "number_of_matches": len(species_list),
-        "species": species_list
-    }
+    return species_from_row(results[0])
 
 
 # Adds a new species
