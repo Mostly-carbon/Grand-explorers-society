@@ -93,8 +93,13 @@ def search_species(
 
     if order.lower() == "desc":
         query += " DESC"
-    else:
+    elif order.lower() == "asc":
         query += " ASC"
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid order option: {order}. Valid options are: asc, desc"
+        )
 
     results = read_from_database(query, parameters)
 
@@ -169,7 +174,7 @@ def update_species(species_id: int, species: Species):
             """
             UPDATE species
             SET name = ?, scientific_name = ?, kingdom = ?, rarity = ?,
-                habitat = ?, lifespan = ?, diet = ?, description = ?
+            habitat = ?, lifespan = ?, diet = ?, description = ?
             WHERE id = ?
             """,
             (

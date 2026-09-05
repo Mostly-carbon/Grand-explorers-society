@@ -20,50 +20,14 @@ cursor.execute("""
     );
 """)
 
-# Insert the first documented species
 cursor.execute("""
-    INSERT INTO species (
-        name,
-        scientific_name,
-        kingdom,
-        rarity,
-        habitat,
-        lifespan,
-        diet,
-        description
-    )
-    VALUES (
-        'cat',
-        'Felis catus',
-        'Animal',
-        'Common',
-        'Domestic',
-        '12-18 years',
-        'Carnivorous',
-        'A small carnivorous mammal'
-    );
-""")
-
-cursor.execute("""
-    INSERT INTO species (
-        name,
-        scientific_name,
-        kingdom,
-        rarity,
-        habitat,
-        lifespan,
-        diet,
-        description
-    )
-    VALUES (
-        'dog',
-        'Canis lupus familiaris',
-        'Animal',
-        'Common',
-        'Domestic',
-        '10-13 years',
-        'Omnivorous',
-        'A domesticated carnivore'
+    CREATE TABLE IF NOT EXISTS explorer (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        title TEXT NOT NULL,
+        activity_period TEXT,
+        nationality TEXT,
+        expedition_count INTEGER
     );
 """)
 
