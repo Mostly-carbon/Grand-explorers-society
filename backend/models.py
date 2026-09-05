@@ -26,3 +26,17 @@ class Species(BaseModel):
     lifespan: str
     diet: str = Field(min_length=1, max_length=100)
     description: str = Field(min_length=1, max_length=2000)
+
+
+class Explorer(BaseModel):
+
+    @field_validator("name", "title", "activity_period", "nationality", mode="before")
+    @classmethod
+    def cleanup(cls, value):
+        return value.strip()
+
+    name: str = Field(min_length=1, max_length=100)
+    title: str = Field(min_length=1, max_length=150)
+    activity_period: str = Field(min_length=1, max_length=50)
+    nationality: str = Field(min_length=1, max_length=50)
+    expedition_count: int = Field(ge=0)
