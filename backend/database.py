@@ -1,9 +1,11 @@
 import sqlite3
-
+from pathlib import Path
 
 # Creates and returns a connection to the project database
 def get_db_connection():
-    return sqlite3.connect("explorer.db")
+    database_path = Path(__file__).resolve().parent / "explorer.db"
+    connection = sqlite3.connect(database_path)
+    return sqlite3.connect(database_path)
 
 
 # Executes a SELECT query and returns all matching rows
