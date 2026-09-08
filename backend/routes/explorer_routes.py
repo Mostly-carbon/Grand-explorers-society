@@ -7,7 +7,7 @@ from models import Explorer
 from services.explorer_service import explorer_from_row
 
 
-router = APIRouter(prefix="/explorers")
+router = APIRouter(prefix="/explorer")
 
 
 # Returns all explorers
@@ -85,7 +85,7 @@ def update_explorer(explorer_id: int, explorer: Explorer):
             """
             UPDATE explorer
             SET name = ?, title = ?, activity_period = ?,
-                nationality = ?, expedition_count = ?
+            nationality = ?, expedition_count = ?
             WHERE id = ?
             """,
             (

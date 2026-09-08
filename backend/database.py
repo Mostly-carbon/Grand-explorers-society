@@ -5,7 +5,8 @@ from pathlib import Path
 def get_db_connection():
     database_path = Path(__file__).resolve().parent / "explorer.db"
     connection = sqlite3.connect(database_path)
-    return sqlite3.connect(database_path)
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
 
 
 # Executes a SELECT query and returns all matching rows

@@ -50,8 +50,8 @@ cursor.execute("""
 
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS explorer_expedition (
-        explorer_id INTEGER,
-        expedition_id INTEGER,
+        explorer_id INTEGER NOT NULL,
+        expedition_id INTEGER NOT NULL,
         PRIMARY KEY (explorer_id, expedition_id),
         FOREIGN KEY (explorer_id) REFERENCES explorer(id),
         FOREIGN KEY (expedition_id) REFERENCES expedition(id)

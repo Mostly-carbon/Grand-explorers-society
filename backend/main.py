@@ -1,14 +1,15 @@
 from fastapi import FastAPI
-from routes.species import router
-from routes.explorer_routes import router as explorer_router
-
+from routes.species import router as species_routes
+from routes.explorer_routes import router as explorer_routes
+from routes.expedition_routes import router as expedition_routes
 
 # Create the FastAPI application
 app = FastAPI()
 
 # Register the routes
-app.include_router(router)
-app.include_router(explorer_router)
+app.include_router(species_routes)
+app.include_router(explorer_routes)
+app.include_router(expedition_routes)
 
 @app.get("/")
 def root():
