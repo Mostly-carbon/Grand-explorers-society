@@ -1,36 +1,38 @@
-from pydantic import BaseModel, Field, field_validator
-from enum import Enum
+# Defines the Pydantic models used to validate API data.
 
-# Allowed rarity values
-class Rarity(str, Enum):
-    COMMON = "Common"
-    UNCOMMON = "Uncommon"
-    RARE = "Rare"
-    VERY_RARE = "Very rare"
-    EXTREMELY_RARE = "Extremely rare"
+from pydantic import BaseModel, Field, field_validator
 
 
 class Species(BaseModel):
-
-    # Remove surrounding whitespace before validation
-    @field_validator("name", "scientific_name", "kingdom", "habitat", "diet", "description", mode="before")
+    @field_validator(
+        "common_name",
+        "scientific_name",
+        "kingdom",
+        "rank",
+        "taxonomic_status",
+        mode="before"
+    )
     @classmethod
     def cleanup(cls, value):
+        if value is None:
+            return value
         return value.strip()
 
-    name: str = Field(min_length=1, max_length=100)
+    common_name: str | None = Field(default=None, max_length=100)
     scientific_name: str = Field(min_length=1, max_length=150)
-    kingdom: str = Field(min_length=1, max_length=50)
-    rarity: Rarity
-    habitat: str = Field(min_length=1, max_length=100)
-    lifespan: str
-    diet: str = Field(min_length=1, max_length=100)
-    description: str = Field(min_length=1, max_length=2000)
+    kingdom: str | None = Field(default=None, max_length=50)
+    rank: str | None = Field(default=None, max_length=50)
+    taxonomic_status: str | None = Field(default=None, max_length=50)
 
 
 class Explorer(BaseModel):
-
-    @field_validator("name", "title", "activity_period", "nationality", mode="before")
+    @field_validator(
+        "name",
+        "title",
+        "activity_period",
+        "nationality",
+        mode="before"
+    )
     @classmethod
     def cleanup(cls, value):
         return value.strip()

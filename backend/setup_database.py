@@ -12,14 +12,32 @@ cursor = connection.cursor()
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS species (
         id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
+        common_name TEXT,
         scientific_name TEXT UNIQUE NOT NULL,
         kingdom TEXT,
-        rarity TEXT,
-        habitat TEXT,
-        lifespan TEXT,
-        diet TEXT,
-        description TEXT
+        rank TEXT,
+        taxonomic_status TEXT
+    );
+""")
+
+# Create the sources table
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS sources (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        url TEXT NOT NULL,
+        source_type TEXT
+    );
+""")
+
+# Connect species to the sources used for their records
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS species_sources (
+        species_id INTEGER NOT NULL,
+        source_id INTEGER NOT NULL,
+        PRIMARY KEY (species_id, source_id),
+        FOREIGN KEY (species_id) REFERENCES species(id),
+        FOREIGN KEY (source_id) REFERENCES sources(id)
     );
 """)
 

@@ -1,7 +1,6 @@
 # Handles API routes for creating, reading, updating, deleting, searching, and sorting species.
 
-from fastapi import APIRouter
-from fastapi import HTTPException
+from fastapi import APIRouter, HTTPException
 from database import read_from_database, write_to_database
 import sqlite3
 from models import Species
@@ -16,7 +15,11 @@ router = APIRouter(prefix="/species")
 def get_species():
 
     results = read_from_database(
-        "SELECT * FROM species ORDER BY name COLLATE NOCASE ASC",
+        """
+        SELECT *
+        FROM species
+        ORDER BY COALESCE(common_name, scientific_name) COLLATE NOCASE ASC
+        """,
         ()
     )
 
@@ -31,12 +34,11 @@ def get_species():
 # Searches and sorts species
 @router.get("/search")
 def search_species(
-    name: str = None,
+    common_name: str = None,
     scientific_name: str = None,
     kingdom: str = None,
-    rarity: str = None,
-    habitat: str = None,
-    diet: str = None,
+    rank: str = None,
+    taxonomic_status: str = None,
     sort: str = None,
     order: str = "asc"
 ):
@@ -45,9 +47,9 @@ def search_species(
     parameters = []
     conditions = []
 
-    if name is not None:
-        conditions.append("name COLLATE NOCASE LIKE ?")
-        parameters.append(f"%{name}%")
+    if common_name is not None:
+        conditions.append("common_name COLLATE NOCASE LIKE ?")
+        parameters.append(f"%{common_name}%")
 
     if scientific_name is not None:
         conditions.append("scientific_name COLLATE NOCASE LIKE ?")
@@ -57,25 +59,23 @@ def search_species(
         conditions.append("kingdom COLLATE NOCASE = ?")
         parameters.append(kingdom)
 
-    if rarity is not None:
-        conditions.append("rarity COLLATE NOCASE = ?")
-        parameters.append(rarity)
+    if rank is not None:
+        conditions.append("rank COLLATE NOCASE = ?")
+        parameters.append(rank)
 
-    if habitat is not None:
-        conditions.append("habitat COLLATE NOCASE LIKE ?")
-        parameters.append(f"%{habitat}%")
-
-    if diet is not None:
-        conditions.append("diet COLLATE NOCASE = ?")
-        parameters.append(diet)
+    if taxonomic_status is not None:
+        conditions.append("taxonomic_status COLLATE NOCASE = ?")
+        parameters.append(taxonomic_status)
 
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
 
     sort_options = {
-        "name": "name",
+        "common_name": "common_name",
         "scientific_name": "scientific_name",
-        "habitat": "habitat"
+        "kingdom": "kingdom",
+        "rank": "rank",
+        "taxonomic_status": "taxonomic_status"
     }
 
     if sort is not None:
@@ -87,7 +87,7 @@ def search_species(
                 detail=f"Invalid sort option: {sort}. Valid options are: {', '.join(sort_options.keys())}"
             )
     else:
-        sort_column = "name"
+        sort_column = "common_name"
 
     query += f" ORDER BY {sort_column} COLLATE NOCASE"
 
@@ -137,23 +137,20 @@ def add_species(species: Species):
         write_to_database(
             """
             INSERT INTO species
-            (name, scientific_name, kingdom, rarity, habitat, lifespan, diet, description)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (common_name, scientific_name, kingdom, rank, taxonomic_status)
+            VALUES (?, ?, ?, ?, ?)
             """,
             (
-                species.name,
+                species.common_name,
                 species.scientific_name,
                 species.kingdom,
-                species.rarity,
-                species.habitat,
-                species.lifespan,
-                species.diet,
-                species.description
+                species.rank,
+                species.taxonomic_status
             )
         )
 
         return {
-            "message": f"Species '{species.name}' has been added successfully."
+            "message": f"Species '{species.scientific_name}' has been added successfully."
         }
 
     except sqlite3.IntegrityError as e:
@@ -173,19 +170,16 @@ def update_species(species_id: int, species: Species):
         affected_rows = write_to_database(
             """
             UPDATE species
-            SET name = ?, scientific_name = ?, kingdom = ?, rarity = ?,
-            habitat = ?, lifespan = ?, diet = ?, description = ?
+            SET common_name = ?, scientific_name = ?, kingdom = ?,
+                rank = ?, taxonomic_status = ?
             WHERE id = ?
             """,
             (
-                species.name,
+                species.common_name,
                 species.scientific_name,
                 species.kingdom,
-                species.rarity,
-                species.habitat,
-                species.lifespan,
-                species.diet,
-                species.description,
+                species.rank,
+                species.taxonomic_status,
                 species_id
             )
         )
