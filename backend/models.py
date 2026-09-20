@@ -1,4 +1,4 @@
-# Defines the Pydantic models used to validate API data.
+# Defines the Pydantic models used to validate API and Silver-layer data.
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -42,3 +42,24 @@ class Explorer(BaseModel):
     activity_period: str = Field(min_length=1, max_length=50)
     nationality: str = Field(min_length=1, max_length=50)
     expedition_count: int = Field(ge=0)
+
+
+class SilverTaxon(BaseModel):
+    taxon_id: str
+    parent_taxon_id: str | None = None
+    accepted_taxon_id: str | None = None
+    scientific_name: str
+    scientific_name_authorship: str | None = None
+    taxonomic_status: str
+    taxon_rank: str
+    kingdom: str | None = None
+    phylum: str | None = None
+    class_name: str | None = None
+    order: str | None = None
+    family: str | None = None
+    genus: str | None = None
+    specific_epithet: str | None = None
+    infraspecific_epithet: str | None = None
+    taxon_remarks: str | None = None
+    source_reference: str | None = None
+    dataset_id: str
