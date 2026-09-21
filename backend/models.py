@@ -63,3 +63,9 @@ class SilverTaxon(BaseModel):
     taxon_remarks: str | None = None
     source_reference: str | None = None
     dataset_id: str
+
+class SilverVernacularName(BaseModel):
+    taxon_id: str
+    language: str
+    vernacular_name: str
+    merged: bool

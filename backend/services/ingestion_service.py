@@ -4,7 +4,7 @@ import csv
 import sys
 
 from database import read_from_database, write_to_database
-from models import SilverTaxon, Species
+from models import SilverTaxon, SilverVernacularName, Species
 
 
 csv.field_size_limit(sys.maxsize)
@@ -40,6 +40,13 @@ def normalize_taxon(record):
         dataset_id=record["dwc:datasetID"],
     )
 
+def normalize_vernacular(record):
+    return SilverVernacularName(
+        taxon_id=record["dwc:taxonID"],
+        language=record["dcterms:language"],
+        vernacular_name=record["dwc:vernacularName"],
+        merged=record["clb:merged"].lower() == "true",
+    )
 
 def build_taxon_silver(input_path, output_path):
     with open(output_path, "w", encoding="utf-8", newline="") as output_file:
@@ -76,6 +83,26 @@ def build_taxon_silver(input_path, output_path):
             taxon = normalize_taxon(record)
             writer.writerow(taxon.model_dump())
 
+def build_vernacular_silver(input_path, output_path):
+    fieldnames = [
+        "taxon_id",
+        "language",
+        "vernacular_name",
+        "merged",
+    ]
+
+    with open(output_path, "w", encoding="utf-8", newline="") as output_file:
+        writer = csv.DictWriter(
+            output_file,
+            fieldnames=fieldnames,
+            delimiter="\t",
+        )
+
+        writer.writeheader()
+
+        for record in read_raw_file(input_path):
+            vernacular = normalize_vernacular(record)
+            writer.writerow(vernacular.model_dump())
 
 def save_species(species):
     existing = read_from_database(
