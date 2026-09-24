@@ -11,5 +11,8 @@ __pycache__/
 # Local databases
 *.db
 
-# Generated data
-data/
+# Generated datasets
+/backend/data/raw/
+/backend/data/silver/
+/backend/data/gold/*.tsv
+/backend/data/gold/*.db
