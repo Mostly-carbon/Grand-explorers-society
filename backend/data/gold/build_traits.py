@@ -1,65 +1,163 @@
-# Builds Gold trait definitions and AnimalObservations trait records.
+# Builds Gold trait definitions and trait observations from Silver trait datasets.
 
 import csv
-import os
 import sys
 
 
 csv.field_size_limit(sys.maxsize)
 
 
-SILVER_FILE = (
-    "data/silver/animal_observations.tsv"
-)
+SILVER_ANIMAL_FILE = "data/silver/animal_observations.tsv"
+SILVER_BIRD_FILE = "data/silver/elton_birds.tsv"
+SILVER_MAMMAL_FILE = "data/silver/elton_mammals.tsv"
 
 RESOLUTION_FILE = (
     "data/gold/animal_observation_species_resolution.tsv"
 )
 
-SOURCE_FILE = (
-    "data/gold/source.tsv"
-)
+TAXON_FILE = "data/gold/taxon.tsv"
+SPECIES_FILE = "data/gold/species.tsv"
+SOURCE_FILE = "data/gold/source.tsv"
 
-TRAIT_FILE = (
-    "data/gold/trait.tsv"
-)
-
-TRAIT_OBSERVATION_FILE = (
-    "data/gold/trait_observation.tsv"
-)
+TRAIT_FILE = "data/gold/trait.tsv"
+TRAIT_OBSERVATION_FILE = "data/gold/trait_observation.tsv"
 
 
-TRAITS = {
-    "body_mass": {
-        "name": "Body mass",
-        "category": "physical",
-        "description": (
-            "Mass of the organism."
-        ),
-    },
-    "metabolic_rate": {
-        "name": "Metabolic rate",
-        "category": "physiology",
-        "description": (
-            "Rate of energy expenditure "
-            "or metabolism."
-        ),
-    },
-    "mass_specific_metabolic_rate": {
-        "name": "Mass-specific metabolic rate",
-        "category": "physiology",
-        "description": (
-            "Metabolic rate normalized "
-            "by body mass."
-        ),
-    },
-    "brain_size": {
-        "name": "Brain size",
-        "category": "physical",
-        "description": (
-            "Measured brain size."
-        ),
-    },
+BASE_TRAITS = {
+    "body_mass": (
+        "Body mass",
+        "physical",
+        "Mass of the organism.",
+    ),
+    "metabolic_rate": (
+        "Metabolic rate",
+        "physiology",
+        "Rate of energy expenditure or metabolism.",
+    ),
+    "mass_specific_metabolic_rate": (
+        "Mass-specific metabolic rate",
+        "physiology",
+        "Metabolic rate normalized by body mass.",
+    ),
+    "brain_size": (
+        "Brain size",
+        "physical",
+        "Measured brain size.",
+    ),
+}
+
+
+ELTON_TRAITS = {
+    "diet_inv": (
+        "Diet: invertebrates",
+        "diet",
+        "Percentage of diet consisting of invertebrates.",
+    ),
+    "diet_vend": (
+        "Diet: vertebrate endotherms",
+        "diet",
+        "Percentage of diet consisting of vertebrate endotherms.",
+    ),
+    "diet_vect": (
+        "Diet: vertebrate ectotherms",
+        "diet",
+        "Percentage of diet consisting of vertebrate ectotherms.",
+    ),
+    "diet_vfish": (
+        "Diet: vertebrate fish",
+        "diet",
+        "Percentage of diet consisting of fish.",
+    ),
+    "diet_vunk": (
+        "Diet: vertebrates, unknown",
+        "diet",
+        "Percentage of diet consisting of vertebrates of unknown type.",
+    ),
+    "diet_scav": (
+        "Diet: scavenged material",
+        "diet",
+        "Percentage of diet obtained through scavenging.",
+    ),
+    "diet_fruit": (
+        "Diet: fruit",
+        "diet",
+        "Percentage of diet consisting of fruit.",
+    ),
+    "diet_nect": (
+        "Diet: nectar",
+        "diet",
+        "Percentage of diet consisting of nectar.",
+    ),
+    "diet_seed": (
+        "Diet: seeds",
+        "diet",
+        "Percentage of diet consisting of seeds.",
+    ),
+    "diet_planto": (
+        "Diet: plant material",
+        "diet",
+        "Percentage of diet consisting of plant material.",
+    ),
+    "for_strat_watbelowsurf": (
+        "Foraging: below water surface",
+        "foraging",
+        "Percentage associated with foraging below the water surface.",
+    ),
+    "for_strat_wataroundsurf": (
+        "Foraging: around water surface",
+        "foraging",
+        "Percentage associated with foraging around the water surface.",
+    ),
+    "for_strat_ground": (
+        "Foraging: ground",
+        "foraging",
+        "Percentage associated with ground foraging.",
+    ),
+    "for_strat_understory": (
+        "Foraging: understory",
+        "foraging",
+        "Percentage associated with understory foraging.",
+    ),
+    "for_strat_midhigh": (
+        "Foraging: mid/high vegetation",
+        "foraging",
+        "Percentage associated with mid/high vegetation foraging.",
+    ),
+    "for_strat_canopy": (
+        "Foraging: canopy",
+        "foraging",
+        "Percentage associated with canopy foraging.",
+    ),
+    "for_strat_aerial": (
+        "Foraging: aerial",
+        "foraging",
+        "Percentage associated with aerial foraging.",
+    ),
+    "for_strat_value": (
+        "Foraging strategy",
+        "foraging",
+        "Foraging strategy value recorded by EltonTraits.",
+    ),
+    "pelagic_specialist": (
+        "Pelagic specialist",
+        "foraging",
+        "Pelagic specialization value recorded by EltonTraits.",
+    ),
+    "nocturnal": (
+        "Nocturnal activity",
+        "activity",
+        "Nocturnal activity value recorded by EltonTraits.",
+    ),
+    "activity_crepuscular": (
+        "Crepuscular activity",
+        "activity",
+        "Crepuscular activity value recorded by EltonTraits.",
+    ),
+    "activity_diurnal": (
+        "Diurnal activity",
+        "activity",
+        "Diurnal activity value recorded by EltonTraits.",
+    ),
 }
 
 
@@ -70,7 +168,7 @@ def clean_text(value):
     return value.strip()
 
 
-def to_optional_float(value):
+def to_float(value):
     value = clean_text(value)
 
     if not value:
@@ -98,15 +196,64 @@ def load_sources():
         )
 
         for row in reader:
-            sources[
-                clean_text(row["name"])
-            ] = row["id"]
+            name = clean_text(row["name"]).lower()
+
+            sources[name] = row["id"]
 
     return sources
 
 
+def find_source_id(sources, name):
+    target = name.lower()
+
+    for source_name, source_id in sources.items():
+        if target in source_name:
+            return source_id
+
+    raise RuntimeError(
+        f"Could not find source matching '{name}' in source.tsv."
+    )
+
+
+def load_species_map():
+    taxon_to_species = {}
+
+    print("Loading Gold species mapping...")
+
+    with open(
+        SPECIES_FILE,
+        "r",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+
+        reader = csv.DictReader(
+            file,
+            delimiter="\t",
+        )
+
+        for row in reader:
+            taxon_id = clean_text(
+                row["taxon_id"]
+            )
+
+            species_id = clean_text(
+                row["id"]
+            )
+
+            if taxon_id and species_id:
+                taxon_to_species[taxon_id] = species_id
+
+    print(
+        f"Gold taxon → species mappings: "
+        f"{len(taxon_to_species):,}"
+    )
+
+    return taxon_to_species
+
+
 def load_resolution():
-    resolutions = []
+    resolutions = {}
 
     with open(
         RESOLUTION_FILE,
@@ -120,75 +267,133 @@ def load_resolution():
             delimiter="\t",
         )
 
-        for row_number, row in enumerate(
-            reader,
-            start=1,
-        ):
-            row["_row_number"] = row_number
-            resolutions.append(row)
+        for row in reader:
+            source_row_id = clean_text(
+                row["source_row_id"]
+            )
+
+            species_id = clean_text(
+                row["resolved_species_id"]
+            )
+
+            if source_row_id:
+                resolutions[source_row_id] = species_id
 
     return resolutions
 
 
-def rewrite_resolution_with_row_ids(
-    resolutions,
-):
-    fieldnames = [
-        "source_row_id",
-        "source_name",
-        "resolved_taxon_id",
-        "resolved_species_id",
-        "resolution_type",
-        "resolution_status",
-    ]
+def load_elton_name_map(taxon_to_species):
+    name_to_species = {}
+
+    print(
+        "Scanning Gold taxon for Elton species names "
+        "and synonyms..."
+    )
 
     with open(
-        RESOLUTION_FILE,
-        "w",
+        TAXON_FILE,
+        "r",
         encoding="utf-8",
         newline="",
     ) as file:
 
-        writer = csv.DictWriter(
+        reader = csv.DictReader(
             file,
-            fieldnames=fieldnames,
             delimiter="\t",
         )
 
-        writer.writeheader()
+        for row in reader:
+            taxon_id = clean_text(row["id"])
 
-        for row in resolutions:
-            writer.writerow(
-                {
-                    "source_row_id": row[
-                        "_row_number"
-                    ],
-                    "source_name": row[
-                        "source_name"
-                    ],
-                    "resolved_taxon_id": row[
-                        "resolved_taxon_id"
-                    ],
-                    "resolved_species_id": row[
-                        "resolved_species_id"
-                    ],
-                    "resolution_type": row[
-                        "resolution_type"
-                    ],
-                    "resolution_status": row[
-                        "resolution_status"
-                    ],
-                }
+            rank = clean_text(
+                row["rank"]
+            ).lower()
+
+            # Elton uses species-level binomial names.
+            # Only use species-rank COL records for matching.
+            if rank != "species":
+                continue
+
+            genus = clean_text(
+                row["genus"]
             )
+
+            specific_epithet = clean_text(
+                row["specific_epithet"]
+            )
+
+            if not genus or not specific_epithet:
+                continue
+
+            scientific_name = (
+                f"{genus} {specific_epithet}"
+            )
+
+            status = clean_text(
+                row["taxonomic_status"]
+            ).lower()
+
+            species_id = None
+
+            # Accepted/provisionally accepted species.
+            if (
+                status in {
+                    "accepted",
+                    "provisionally accepted",
+                }
+                and taxon_id in taxon_to_species
+            ):
+                species_id = taxon_to_species[
+                    taxon_id
+                ]
+
+            # Synonym → accepted species.
+            elif status in {
+                "synonym",
+                "ambiguous synonym",
+                "misapplied",
+            }:
+                accepted_taxon_id = clean_text(
+                    row["accepted_taxon_id"]
+                )
+
+                if accepted_taxon_id:
+                    species_id = taxon_to_species.get(
+                        accepted_taxon_id
+                    )
+
+            if not species_id:
+                continue
+
+            existing = name_to_species.get(
+                scientific_name
+            )
+
+            if existing is None:
+                name_to_species[
+                    scientific_name
+                ] = species_id
+
+            elif existing != species_id:
+                # Same binomial maps to multiple Gold species.
+                # Remove it rather than guessing.
+                del name_to_species[
+                    scientific_name
+                ]
+
+    print(
+        f"Elton scientific-name mappings: "
+        f"{len(name_to_species):,}"
+    )
+
+    return name_to_species
 
 
 def build_trait_table():
-    fieldnames = [
-        "id",
-        "name",
-        "category",
-        "description",
-    ]
+    traits = {
+        **BASE_TRAITS,
+        **ELTON_TRAITS,
+    }
 
     trait_ids = {}
 
@@ -201,75 +406,94 @@ def build_trait_table():
 
         writer = csv.DictWriter(
             file,
-            fieldnames=fieldnames,
+            fieldnames=[
+                "id",
+                "name",
+                "category",
+                "description",
+            ],
             delimiter="\t",
         )
 
         writer.writeheader()
 
-        for trait_id, trait in TRAITS.items():
-            internal_id = str(
-                len(trait_ids) + 1
-            )
+        for index, (key, values) in enumerate(
+            traits.items(),
+            start=1,
+        ):
 
-            trait_ids[trait_id] = internal_id
+            name, category, description = values
+
+            trait_ids[key] = str(index)
 
             writer.writerow(
                 {
-                    "id": internal_id,
-                    "name": trait["name"],
-                    "category": trait["category"],
-                    "description": trait[
-                        "description"
-                    ],
+                    "id": str(index),
+                    "name": name,
+                    "category": category,
+                    "description": description,
                 }
             )
+
+    print(
+        f"Trait definitions: {len(trait_ids):,}"
+    )
 
     return trait_ids
 
 
-def make_observation(
+def write_observation(
+    writer,
     observation_id,
-    source_row_id,
     species_id,
     trait_id,
     value,
-    minimum,
-    maximum,
     unit,
     context,
     sample_size,
     source_id,
+    source_record_id,
     notes,
 ):
-    return {
-        "id": str(observation_id),
-        "species_id": species_id,
-        "trait_id": trait_id,
-        "value_numeric": value,
-        "value_minimum": minimum,
-        "value_maximum": maximum,
-        "unit": unit,
-        "context": context,
-        "sample_size": sample_size,
-        "source_id": source_id,
-        "source_record_id": (
-            f"animal_observations:"
-            f"{source_row_id}"
-        ),
-        "notes": notes,
-    }
+    if value is None:
+        return observation_id
+
+    observation_id += 1
+
+    writer.writerow(
+        {
+            "id": str(observation_id),
+            "species_id": species_id,
+            "trait_id": trait_id,
+            "value_numeric": value,
+            "value_text": "",
+            "unit": unit,
+            "context": context,
+            "sample_size": sample_size,
+            "source_id": source_id,
+            "source_record_id": source_record_id,
+            "notes": notes,
+        }
+    )
+
+    return observation_id
 
 
-def build_trait_observations(
-    resolutions,
+def build_animal_observations(
+    writer,
     trait_ids,
-    sources,
+    source_id,
+    resolutions,
+    observation_id,
 ):
-    observations = []
+    print()
+    print("Building AnimalObservations...")
+
+    rows = 0
+    written = 0
 
     with open(
-        SILVER_FILE,
+        SILVER_ANIMAL_FILE,
         "r",
         encoding="utf-8",
         newline="",
@@ -284,225 +508,481 @@ def build_trait_observations(
             reader,
             start=1,
         ):
-            resolution = resolutions[
-                row_number - 1
-            ]
+            rows += 1
 
-            species_id = clean_text(
-                resolution[
-                    "resolved_species_id"
-                ]
+            species_id = resolutions.get(
+                str(row_number),
+                "",
             )
 
             if not species_id:
                 continue
 
-            source_id = sources.get(
-                "AnimalTraits"
+            source_record_id = (
+                f"animal_observations:{row_number}"
             )
-
-            if not source_id:
-                raise ValueError(
-                    "Could not find "
-                    "AnimalTraits in source.tsv."
-                )
 
             sample_size = clean_text(
-                row["sample_size"]
+                row.get("sample_size")
             )
+
+            for field in [
+                "body_mass",
+                "metabolic_rate",
+                "mass_specific_metabolic_rate",
+                "brain_size",
+            ]:
+
+                value = to_float(
+                    row.get(field)
+                )
+
+                if value is None:
+                    continue
+
+                unit = clean_text(
+                    row.get(
+                        f"{field}_units"
+                    )
+                )
+
+                context = clean_text(
+                    row.get(
+                        f"{field}_method"
+                    )
+                )
+
+                notes = clean_text(
+                    row.get(
+                        f"{field}_comments"
+                    )
+                )
+
+                observation_id = write_observation(
+                    writer,
+                    observation_id,
+                    species_id,
+                    trait_ids[field],
+                    value,
+                    unit,
+                    context,
+                    sample_size,
+                    source_id,
+                    source_record_id,
+                    notes,
+                )
+
+                written += 1
+
+    print(
+        f"Input rows: {rows:,}"
+    )
+    print(
+        f"Trait observations: {written:,}"
+    )
+
+    return observation_id
+
+
+def build_elton_birds(
+    writer,
+    trait_ids,
+    source_id,
+    species_map,
+    observation_id,
+):
+    print()
+    print("Building EltonTraits birds...")
+
+    rows = 0
+    matched = 0
+    unmatched = 0
+    written = 0
+
+    diet_fields = [
+        "diet_inv",
+        "diet_vend",
+        "diet_vect",
+        "diet_vfish",
+        "diet_vunk",
+        "diet_scav",
+        "diet_fruit",
+        "diet_nect",
+        "diet_seed",
+        "diet_planto",
+    ]
+
+    foraging_fields = [
+        "for_strat_watbelowsurf",
+        "for_strat_wataroundsurf",
+        "for_strat_ground",
+        "for_strat_understory",
+        "for_strat_midhigh",
+        "for_strat_canopy",
+        "for_strat_aerial",
+    ]
+
+    with open(
+        SILVER_BIRD_FILE,
+        "r",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+
+        reader = csv.DictReader(
+            file,
+            delimiter="\t",
+        )
+
+        for row_number, row in enumerate(
+            reader,
+            start=1,
+        ):
+            rows += 1
 
             scientific_name = clean_text(
-                row["species"]
+                row["scientific"]
             )
 
-            # Body mass
-            body_mass = to_optional_float(
-                row["body_mass"]
+            species_id = species_map.get(
+                scientific_name
+            )
+
+            if not species_id:
+                unmatched += 1
+                continue
+
+            matched += 1
+
+            source_record_id = (
+                f"elton_birds:{row_number}"
+            )
+
+            for field in diet_fields:
+                value = to_float(
+                    row.get(field)
+                )
+
+                observation_id = write_observation(
+                    writer,
+                    observation_id,
+                    species_id,
+                    trait_ids[field],
+                    value,
+                    "%",
+                    "EltonTraits diet",
+                    "",
+                    source_id,
+                    source_record_id,
+                    (
+                        f"certainty="
+                        f"{clean_text(row.get('diet_certainty'))}; "
+                        f"reference="
+                        f"{clean_text(row.get('diet_source'))}"
+                    ),
+                )
+
+                if value is not None:
+                    written += 1
+
+            for field in foraging_fields:
+                value = to_float(
+                    row.get(field)
+                )
+
+                observation_id = write_observation(
+                    writer,
+                    observation_id,
+                    species_id,
+                    trait_ids[field],
+                    value,
+                    "%",
+                    "EltonTraits foraging",
+                    "",
+                    source_id,
+                    source_record_id,
+                    (
+                        f"certainty="
+                        f"{clean_text(row.get('for_strat_spec_level'))}; "
+                        f"reference="
+                        f"{clean_text(row.get('for_strat_source'))}"
+                    ),
+                )
+
+                if value is not None:
+                    written += 1
+
+            for field in [
+                "pelagic_specialist",
+                "nocturnal",
+            ]:
+                value = to_float(
+                    row.get(field)
+                )
+
+                observation_id = write_observation(
+                    writer,
+                    observation_id,
+                    species_id,
+                    trait_ids[field],
+                    value,
+                    "",
+                    "EltonTraits",
+                    "",
+                    source_id,
+                    source_record_id,
+                    "",
+                )
+
+                if value is not None:
+                    written += 1
+
+            body_mass = to_float(
+                row.get("body_mass_value")
+            )
+
+            observation_id = write_observation(
+                writer,
+                observation_id,
+                species_id,
+                trait_ids["body_mass"],
+                body_mass,
+                "g",
+                "EltonTraits body mass",
+                "",
+                source_id,
+                source_record_id,
+                (
+                    f"source="
+                    f"{clean_text(row.get('body_mass_source'))}; "
+                    f"spec_level="
+                    f"{clean_text(row.get('body_mass_spec_level'))}; "
+                    f"comment="
+                    f"{clean_text(row.get('body_mass_comment'))}"
+                ),
             )
 
             if body_mass is not None:
-                observations.append(
-                    make_observation(
-                        len(observations) + 1,
-                        row_number,
-                        species_id,
-                        trait_ids[
-                            "body_mass"
-                        ],
-                        body_mass,
-                        to_optional_float(
-                            row[
-                                "body_mass_minimum"
-                            ]
-                        ),
-                        to_optional_float(
-                            row[
-                                "body_mass_maximum"
-                            ]
-                        ),
-                        clean_text(
-                            row[
-                                "body_mass_units"
-                            ]
-                        ),
-                        clean_text(
-                            row[
-                                "body_mass_method"
-                            ]
-                        ),
-                        sample_size,
-                        source_id,
-                        clean_text(
-                            row[
-                                "body_mass_comments"
-                            ]
-                        ),
-                    )
-                )
+                written += 1
 
-            # Metabolic rate
-            metabolic_rate = (
-                to_optional_float(
-                    row["metabolic_rate"]
-                )
-            )
+    print(f"Input rows: {rows:,}")
+    print(f"Matched: {matched:,}")
+    print(f"Unmatched: {unmatched:,}")
+    print(f"Trait observations: {written:,}")
 
-            if metabolic_rate is not None:
-                observations.append(
-                    make_observation(
-                        len(observations) + 1,
-                        row_number,
-                        species_id,
-                        trait_ids[
-                            "metabolic_rate"
-                        ],
-                        metabolic_rate,
-                        to_optional_float(
-                            row[
-                                "metabolic_rate_minimum"
-                            ]
-                        ),
-                        to_optional_float(
-                            row[
-                                "metabolic_rate_maximum"
-                            ]
-                        ),
-                        clean_text(
-                            row[
-                                "metabolic_rate_units"
-                            ]
-                        ),
-                        clean_text(
-                            row[
-                                "metabolic_rate_method"
-                            ]
-                        ),
-                        sample_size,
-                        source_id,
-                        clean_text(
-                            row[
-                                "metabolic_rate_comments"
-                            ]
-                        ),
-                    )
-                )
-
-            # Mass-specific metabolic rate
-            mass_specific = (
-                to_optional_float(
-                    row[
-                        "mass_specific_metabolic_rate"
-                    ]
-                )
-            )
-
-            if mass_specific is not None:
-                observations.append(
-                    make_observation(
-                        len(observations) + 1,
-                        row_number,
-                        species_id,
-                        trait_ids[
-                            "mass_specific_metabolic_rate"
-                        ],
-                        mass_specific,
-                        None,
-                        None,
-                        clean_text(
-                            row[
-                                "mass_specific_metabolic_rate_units"
-                            ]
-                        ),
-                        "",
-                        sample_size,
-                        source_id,
-                        "",
-                    )
-                )
-
-            # Brain size
-            brain_size = to_optional_float(
-                row["brain_size"]
-            )
-
-            if brain_size is not None:
-                observations.append(
-                    make_observation(
-                        len(observations) + 1,
-                        row_number,
-                        species_id,
-                        trait_ids[
-                            "brain_size"
-                        ],
-                        brain_size,
-                        to_optional_float(
-                            row[
-                                "brain_size_minimum"
-                            ]
-                        ),
-                        to_optional_float(
-                            row[
-                                "brain_size_maximum"
-                            ]
-                        ),
-                        clean_text(
-                            row[
-                                "brain_size_units"
-                            ]
-                        ),
-                        clean_text(
-                            row[
-                                "brain_size_method"
-                            ]
-                        ),
-                        sample_size,
-                        source_id,
-                        clean_text(
-                            row[
-                                "brain_size_comments"
-                            ]
-                        ),
-                    )
-                )
-
-    return observations
+    return observation_id
 
 
-def write_observations(observations):
-    fieldnames = [
-        "id",
-        "species_id",
-        "trait_id",
-        "value_numeric",
-        "value_minimum",
-        "value_maximum",
-        "unit",
-        "context",
-        "sample_size",
-        "source_id",
-        "source_record_id",
-        "notes",
+def build_elton_mammals(
+    writer,
+    trait_ids,
+    source_id,
+    species_map,
+    observation_id,
+):
+    print()
+    print("Building EltonTraits mammals...")
+
+    rows = 0
+    matched = 0
+    unmatched = 0
+    written = 0
+
+    diet_fields = [
+        "diet_inv",
+        "diet_vend",
+        "diet_vect",
+        "diet_vfish",
+        "diet_vunk",
+        "diet_scav",
+        "diet_fruit",
+        "diet_nect",
+        "diet_seed",
+        "diet_planto",
     ]
+
+    activity_fields = [
+        ("activity_nocturnal", "nocturnal"),
+        ("activity_crepuscular", "activity_crepuscular"),
+        ("activity_diurnal", "activity_diurnal"),
+    ]
+
+    with open(
+        SILVER_MAMMAL_FILE,
+        "r",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+
+        reader = csv.DictReader(
+            file,
+            delimiter="\t",
+        )
+
+        for row_number, row in enumerate(
+            reader,
+            start=1,
+        ):
+            rows += 1
+
+            scientific_name = clean_text(
+                row["scientific"]
+            )
+
+            species_id = species_map.get(
+                scientific_name
+            )
+
+            if not species_id:
+                unmatched += 1
+                continue
+
+            matched += 1
+
+            source_record_id = (
+                f"elton_mammals:{row_number}"
+            )
+
+            for field in diet_fields:
+                value = to_float(
+                    row.get(field)
+                )
+
+                observation_id = write_observation(
+                    writer,
+                    observation_id,
+                    species_id,
+                    trait_ids[field],
+                    value,
+                    "%",
+                    "EltonTraits diet",
+                    "",
+                    source_id,
+                    source_record_id,
+                    (
+                        f"certainty="
+                        f"{clean_text(row.get('diet_certainty'))}; "
+                        f"reference="
+                        f"{clean_text(row.get('diet_source'))}"
+                    ),
+                )
+
+                if value is not None:
+                    written += 1
+
+            for source_field, trait_name in activity_fields:
+                value = to_float(
+                    row.get(source_field)
+                )
+
+                observation_id = write_observation(
+                    writer,
+                    observation_id,
+                    species_id,
+                    trait_ids[trait_name],
+                    value,
+                    "",
+                    "EltonTraits activity",
+                    "",
+                    source_id,
+                    source_record_id,
+                    (
+                        f"certainty="
+                        f"{clean_text(row.get('activity_certainty'))}; "
+                        f"reference="
+                        f"{clean_text(row.get('activity_source'))}"
+                    ),
+                )
+
+                if value is not None:
+                    written += 1
+
+            foraging = to_float(
+                row.get("for_strat_value")
+            )
+
+            observation_id = write_observation(
+                writer,
+                observation_id,
+                species_id,
+                trait_ids["for_strat_value"],
+                foraging,
+                "",
+                "EltonTraits foraging",
+                "",
+                source_id,
+                source_record_id,
+                (
+                    f"certainty="
+                    f"{clean_text(row.get('for_strat_certainty'))}; "
+                    f"comment="
+                    f"{clean_text(row.get('for_strat_comment'))}"
+                ),
+            )
+
+            if foraging is not None:
+                written += 1
+
+            body_mass = to_float(
+                row.get("body_mass_value")
+            )
+
+            observation_id = write_observation(
+                writer,
+                observation_id,
+                species_id,
+                trait_ids["body_mass"],
+                body_mass,
+                "g",
+                "EltonTraits body mass",
+                "",
+                source_id,
+                source_record_id,
+                (
+                    f"source="
+                    f"{clean_text(row.get('body_mass_source'))}; "
+                    f"spec_level="
+                    f"{clean_text(row.get('body_mass_spec_level'))}"
+                ),
+            )
+
+            if body_mass is not None:
+                written += 1
+
+    print(f"Input rows: {rows:,}")
+    print(f"Matched: {matched:,}")
+    print(f"Unmatched: {unmatched:,}")
+    print(f"Trait observations: {written:,}")
+
+    return observation_id
+
+
+def main():
+    print("Loading Gold data...")
+
+    sources = load_sources()
+
+    animaltraits_source_id = find_source_id(
+        sources,
+        "AnimalTraits",
+    )
+
+    elton_source_id = find_source_id(
+        sources,
+        "EltonTraits",
+    )
+
+    resolutions = load_resolution()
+
+    taxon_to_species = load_species_map()
+
+    elton_species_map = load_elton_name_map(
+        taxon_to_species
+    )
+
+    trait_ids = build_trait_table()
+
+    observation_id = 0
 
     with open(
         TRAIT_OBSERVATION_FILE,
@@ -513,116 +993,58 @@ def write_observations(observations):
 
         writer = csv.DictWriter(
             file,
-            fieldnames=fieldnames,
+            fieldnames=[
+                "id",
+                "species_id",
+                "trait_id",
+                "value_numeric",
+                "value_text",
+                "unit",
+                "context",
+                "sample_size",
+                "source_id",
+                "source_record_id",
+                "notes",
+            ],
             delimiter="\t",
         )
 
         writer.writeheader()
 
-        writer.writerows(observations)
-
-
-def main():
-    print(
-        "Loading existing resolution..."
-    )
-
-    resolutions = load_resolution()
-
-    print(
-        f"Resolution records: "
-        f"{len(resolutions):,}"
-    )
-
-    print(
-        "Adding source row IDs..."
-    )
-
-    rewrite_resolution_with_row_ids(
-        resolutions
-    )
-
-    print(
-        "Loading Gold sources..."
-    )
-
-    sources = load_sources()
-
-    print(
-        "Building trait definitions..."
-    )
-
-    trait_ids = build_trait_table()
-
-    print(
-        f"Trait definitions: "
-        f"{len(trait_ids):,}"
-    )
-
-    print(
-        "Building trait observations..."
-    )
-
-    observations = (
-        build_trait_observations(
-            resolutions,
+        observation_id = build_animal_observations(
+            writer,
             trait_ids,
-            sources,
+            animaltraits_source_id,
+            resolutions,
+            observation_id,
         )
-    )
 
-    write_observations(
-        observations
-    )
-
-    resolved = sum(
-        1
-        for row in resolutions
-        if clean_text(
-            row["resolved_species_id"]
+        observation_id = build_elton_birds(
+            writer,
+            trait_ids,
+            elton_source_id,
+            elton_species_map,
+            observation_id,
         )
-    )
 
-    unresolved = (
-        len(resolutions) - resolved
-    )
+        observation_id = build_elton_mammals(
+            writer,
+            trait_ids,
+            elton_source_id,
+            elton_species_map,
+            observation_id,
+        )
 
     print()
-    print(
-        "ANIMALOBSERVATIONS GOLD BUILD"
-    )
-    print(
-        "-----------------------------"
-    )
-    print(
-        f"Input rows: {len(resolutions):,}"
-    )
-    print(
-        f"Resolved rows: {resolved:,}"
-    )
-    print(
-        f"Unresolved rows: {unresolved:,}"
-    )
+    print("GOLD TRAIT BUILD COMPLETE")
+    print("=========================")
     print(
         f"Trait definitions: "
         f"{len(trait_ids):,}"
     )
     print(
         f"Trait observations: "
-        f"{len(observations):,}"
-    )
-
-    print()
-    print(
-        "Created:"
-    )
-    print(TRAIT_FILE)
-    print(TRAIT_OBSERVATION_FILE)
-    print(RESOLUTION_FILE)
-
-    print()
-    print(
-        "AnimalObservations Gold build complete."
+        f"{observation_id:,}"
     )
 
 
