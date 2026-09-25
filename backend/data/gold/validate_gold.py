@@ -1,4 +1,4 @@
-# Validates relationships and record integrity in Gold datasets.
+# Validates Gold trait definitions, observations, and AnimalObservations provenance.
 
 import csv
 import sys
@@ -7,206 +7,237 @@ import sys
 csv.field_size_limit(sys.maxsize)
 
 
-TAXON_FILE = "data/gold/taxon.tsv"
+TRAIT_FILE = "data/gold/trait.tsv"
+OBSERVATION_FILE = "data/gold/trait_observation.tsv"
+RESOLUTION_FILE = (
+    "data/gold/animal_observation_species_resolution.tsv"
+)
 SPECIES_FILE = "data/gold/species.tsv"
-VERNACULAR_FILE = "data/gold/vernacular_name.tsv"
+SOURCE_FILE = "data/gold/source.tsv"
 
 
-def load_taxon_ids():
-    taxon_ids = set()
-    source_taxon_ids = set()
+def load_ids(file_path, field_name):
+    ids = set()
 
     with open(
-        TAXON_FILE,
+        file_path,
         "r",
         encoding="utf-8",
         newline="",
     ) as file:
-
         reader = csv.DictReader(
             file,
             delimiter="\t",
         )
 
         for row in reader:
-            taxon_ids.add(row["id"])
-            source_taxon_ids.add(row["source_taxon_id"])
+            ids.add(row[field_name])
 
-    return taxon_ids, source_taxon_ids
-
-
-def validate_taxon_relationships(taxon_ids):
-    unresolved_parent = []
-    unresolved_accepted = []
-
-    total = 0
-
-    with open(
-        TAXON_FILE,
-        "r",
-        encoding="utf-8",
-        newline="",
-    ) as file:
-
-        reader = csv.DictReader(
-            file,
-            delimiter="\t",
-        )
-
-        for row in reader:
-            total += 1
-
-            parent_id = row["parent_taxon_id"]
-
-            if parent_id and parent_id not in taxon_ids:
-                unresolved_parent.append(
-                    (
-                        row["id"],
-                        row["source_taxon_id"],
-                        parent_id,
-                        row["scientific_name"],
-                    )
-                )
-
-            accepted_id = row["accepted_taxon_id"]
-
-            if accepted_id and accepted_id not in taxon_ids:
-                unresolved_accepted.append(
-                    (
-                        row["id"],
-                        row["source_taxon_id"],
-                        accepted_id,
-                        row["scientific_name"],
-                    )
-                )
-
-    print()
-    print("TAXON RELATIONSHIPS")
-    print("-------------------")
-    print(f"Taxon records: {total:,}")
-    print(
-        f"Unresolved parent references: "
-        f"{len(unresolved_parent):,}"
-    )
-    print(
-        f"Unresolved accepted references: "
-        f"{len(unresolved_accepted):,}"
-    )
-
-    print()
-    print("Sample unresolved parents:")
-
-    for row in unresolved_parent[:10]:
-        print(row)
-
-    print()
-    print("Sample unresolved accepted references:")
-
-    for row in unresolved_accepted[:10]:
-        print(row)
-
-    return unresolved_parent, unresolved_accepted
-
-
-def validate_species(taxon_ids):
-    total = 0
-    unresolved = []
-
-    with open(
-        SPECIES_FILE,
-        "r",
-        encoding="utf-8",
-        newline="",
-    ) as file:
-
-        reader = csv.DictReader(
-            file,
-            delimiter="\t",
-        )
-
-        for row in reader:
-            total += 1
-
-            if row["taxon_id"] not in taxon_ids:
-                unresolved.append(row)
-
-    print()
-    print("SPECIES")
-    print("-------")
-    print(f"Species records: {total:,}")
-    print(
-        f"Unresolved taxon references: "
-        f"{len(unresolved):,}"
-    )
-
-    return unresolved
-
-
-def validate_vernacular_names(taxon_ids):
-    total = 0
-    unresolved = []
-
-    with open(
-        VERNACULAR_FILE,
-        "r",
-        encoding="utf-8",
-        newline="",
-    ) as file:
-
-        reader = csv.DictReader(
-            file,
-            delimiter="\t",
-        )
-
-        for row in reader:
-            total += 1
-
-            if row["taxon_id"] not in taxon_ids:
-                unresolved.append(row)
-
-    print()
-    print("VERNACULAR NAMES")
-    print("----------------")
-    print(f"Vernacular records: {total:,}")
-    print(
-        f"Unresolved taxon references: "
-        f"{len(unresolved):,}"
-    )
-
-    print()
-    print("Sample unresolved vernacular names:")
-
-    for row in unresolved[:10]:
-        print(row)
-
-    return unresolved
+    return ids
 
 
 def main():
-    print("Loading Gold taxon IDs...")
+    print("Loading Gold IDs...")
 
-    taxon_ids, source_taxon_ids = load_taxon_ids()
+    species_ids = load_ids(
+        SPECIES_FILE,
+        "id",
+    )
 
-    print(
-        f"Gold internal taxon IDs: "
-        f"{len(taxon_ids):,}"
+    trait_ids = load_ids(
+        TRAIT_FILE,
+        "id",
+    )
+
+    source_ids = load_ids(
+        SOURCE_FILE,
+        "id",
     )
 
     print(
-        f"Gold source taxon IDs: "
-        f"{len(source_taxon_ids):,}"
+        f"Species IDs: {len(species_ids):,}"
+    )
+    print(
+        f"Trait IDs: {len(trait_ids):,}"
+    )
+    print(
+        f"Source IDs: {len(source_ids):,}"
     )
 
-    validate_taxon_relationships(
-        taxon_ids,
+    # Trait definitions
+    trait_duplicates = set()
+    seen_traits = set()
+    trait_missing = 0
+
+    with open(
+        TRAIT_FILE,
+        "r",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+        reader = csv.DictReader(
+            file,
+            delimiter="\t",
+        )
+
+        for row in reader:
+            trait_id = row["id"]
+
+            if trait_id in seen_traits:
+                trait_duplicates.add(trait_id)
+
+            seen_traits.add(trait_id)
+
+            for field in [
+                "id",
+                "name",
+                "category",
+                "description",
+            ]:
+                if not row[field].strip():
+                    trait_missing += 1
+
+    print()
+    print("TRAIT DEFINITIONS")
+    print("-----------------")
+    print(
+        f"Records: {len(trait_ids):,}"
+    )
+    print(
+        f"Duplicate IDs: "
+        f"{len(trait_duplicates):,}"
+    )
+    print(
+        f"Missing required fields: "
+        f"{trait_missing:,}"
     )
 
-    validate_species(
-        taxon_ids,
+    # Trait observations
+    total = 0
+    duplicate_ids = set()
+    seen_ids = set()
+
+    unresolved_species = 0
+    unresolved_traits = 0
+    unresolved_sources = 0
+
+    missing_values = 0
+    invalid_numeric_values = 0
+
+    with open(
+        OBSERVATION_FILE,
+        "r",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+        reader = csv.DictReader(
+            file,
+            delimiter="\t",
+        )
+
+        for row in reader:
+            total += 1
+
+            observation_id = row["id"]
+
+            if observation_id in seen_ids:
+                duplicate_ids.add(
+                    observation_id
+                )
+
+            seen_ids.add(observation_id)
+
+            if row["species_id"] not in species_ids:
+                unresolved_species += 1
+
+            if row["trait_id"] not in trait_ids:
+                unresolved_traits += 1
+
+            if row["source_id"] not in source_ids:
+                unresolved_sources += 1
+
+            value = row["value_numeric"].strip()
+
+            if not value:
+                missing_values += 1
+            else:
+                try:
+                    float(value)
+                except ValueError:
+                    invalid_numeric_values += 1
+
+    print()
+    print("TRAIT OBSERVATIONS")
+    print("------------------")
+    print(
+        f"Records: {total:,}"
+    )
+    print(
+        f"Duplicate IDs: "
+        f"{len(duplicate_ids):,}"
+    )
+    print(
+        f"Unresolved species: "
+        f"{unresolved_species:,}"
+    )
+    print(
+        f"Unresolved traits: "
+        f"{unresolved_traits:,}"
+    )
+    print(
+        f"Unresolved sources: "
+        f"{unresolved_sources:,}"
+    )
+    print(
+        f"Missing numeric values: "
+        f"{missing_values:,}"
+    )
+    print(
+        f"Invalid numeric values: "
+        f"{invalid_numeric_values:,}"
     )
 
-    validate_vernacular_names(
-        taxon_ids,
+    # Resolution coverage
+    resolution_total = 0
+    resolved = 0
+    unresolved = 0
+
+    with open(
+        RESOLUTION_FILE,
+        "r",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+        reader = csv.DictReader(
+            file,
+            delimiter="\t",
+        )
+
+        for row in reader:
+            resolution_total += 1
+
+            if row["resolved_species_id"].strip():
+                resolved += 1
+            else:
+                unresolved += 1
+
+    print()
+    print("RESOLUTION COVERAGE")
+    print("-------------------")
+    print(
+        f"Resolution records: "
+        f"{resolution_total:,}"
+    )
+    print(
+        f"Resolved: {resolved:,}"
+    )
+    print(
+        f"Unresolved: {unresolved:,}"
+    )
+
+    print()
+    print(
+        "AnimalObservations Gold validation complete."
     )
 
 
