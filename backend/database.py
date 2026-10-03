@@ -1,48 +1,43 @@
 import sqlite3
 from pathlib import Path
 
-# Creates and returns a connection to the project database
+
+# Creates and returns a connection to the production database.
 def get_db_connection():
-    database_path = Path(__file__).resolve().parent / "explorer.db"
+    database_path = Path(__file__).resolve().parent / "grand_explorers_society.db"
+
     connection = sqlite3.connect(database_path)
+
+    # Allows service code to access columns by name.
+    connection.row_factory = sqlite3.Row
+
     connection.execute("PRAGMA foreign_keys = ON")
+
     return connection
 
 
-# Executes a SELECT query and returns all matching rows
-def read_from_database(query, parameters):
-
-    connect = get_db_connection()
-    cursor = connect.cursor()
+# Executes a SELECT query and returns all matching rows.
+def read_from_database(query, parameters=()):
+    connection = get_db_connection()
 
     try:
-        cursor.execute(query, parameters)
-        results = cursor.fetchall()
+        cursor = connection.execute(query, parameters)
+        return cursor.fetchall()
 
-        connect.close()
-        return results
-
-    except sqlite3.Error:
-        connect.close()
-        raise
+    finally:
+        connection.close()
 
 
-# Executes an INSERT, UPDATE, or DELETE query
-# Returns the number of rows affected by the operation
-def write_to_database(query, parameters):
-
-    connect = get_db_connection()
-    cursor = connect.cursor()
+# Executes an INSERT, UPDATE, or DELETE query.
+# Returns the number of rows affected.
+def write_to_database(query, parameters=()):
+    connection = get_db_connection()
 
     try:
-        cursor.execute(query, parameters)
-        connect.commit()
+        cursor = connection.execute(query, parameters)
+        connection.commit()
 
-        results = cursor.rowcount
+        return cursor.rowcount
 
-        connect.close()
-        return results
-
-    except sqlite3.Error:
-        connect.close()
-        raise
+    finally:
+        connection.close()

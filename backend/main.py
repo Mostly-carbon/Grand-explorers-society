@@ -1,20 +1,31 @@
+# Application entry point for the Grand Explorers' Society API.
+
 from fastapi import FastAPI
-from routes.species import router as species_routes
-from routes.explorer_routes import router as explorer_routes
-from routes.expedition_routes import router as expedition_routes
 
-# Create the FastAPI application
-app = FastAPI()
+from routes.species_routes import router as species_router
+from routes.taxa_routes import router as taxa_router
 
-# Register the routes
-app.include_router(species_routes)
-app.include_router(explorer_routes)
-app.include_router(expedition_routes)
+
+app = FastAPI(
+    title="Grand Explorers' Society API",
+    description="Production API for the Grand Explorers' Society species archive.",
+    version="1.0.0",
+)
+
+
+# Production API routes.
+app.include_router(species_router)
+app.include_router(taxa_router)
+
 
 @app.get("/")
 def root():
-    return {"message": "Welcome to the Grand Explorers' society!"}
+    """Return a simple API status message."""
 
-# Start the server with:
+    return {
+        "message": "Camp's standing"
+    }
+
+
+# Start from the backend directory with:
 # python -m uvicorn main:app --reload
-# **Just make sure you are in the backend directory (cd backend)
