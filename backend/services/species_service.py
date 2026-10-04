@@ -185,7 +185,10 @@ def get_species_detail(scientific_name):
             t.taxon_remarks
         FROM species s
         JOIN taxon t ON t.id = s.taxon_id
-        WHERE t.scientific_name COLLATE NOCASE = ?
+        WHERE
+            LOWER(
+                t.genus || ' ' || t.specific_epithet
+            ) = LOWER(?)
         LIMIT 1
     """
 
