@@ -161,6 +161,20 @@ def get_species(
 def get_species_detail(scientific_name):
     """Build the complete product-shaped species archive."""
 
+    # The catalogue may return the full scientific name including
+    # taxonomic authorship, for example:
+    #
+    #     Panthera leo (Linnaeus, 1758)
+    #
+    # The API should also accept the shorter:
+    #
+    #     Panthera leo
+    #
+    # Extract the base taxonomic name before the authorship so both
+    # forms resolve to the same species.
+
+    base_name = scientific_name.split(" (", 1)[0].strip()
+
     query = """
         SELECT
             s.id AS species_id,
@@ -186,13 +200,15 @@ def get_species_detail(scientific_name):
         FROM species s
         JOIN taxon t ON t.id = s.taxon_id
         WHERE
-            LOWER(
-                t.genus || ' ' || t.specific_epithet
-            ) = LOWER(?)
+            LOWER(t.scientific_name) = LOWER(?)
+            OR LOWER(t.genus || ' ' || t.specific_epithet) = LOWER(?)
         LIMIT 1
     """
 
-    rows = read_from_database(query, (scientific_name,))
+    rows = read_from_database(
+        query,
+        (base_name, base_name),
+    )
 
     if not rows:
         return None
@@ -228,7 +244,7 @@ def get_species_detail(scientific_name):
     )
 
     biology = SpeciesBiology(
-        traits=traits
+        traits=traits,
     )
 
     return SpeciesDetail(

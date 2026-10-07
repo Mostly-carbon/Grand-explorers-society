@@ -50,7 +50,6 @@ def list_species(
 # Returns one complete species archive by scientific name.
 @router.get("/{scientific_name}")
 def get_species_by_name(scientific_name: str):
-
     species = get_species_detail(scientific_name)
 
     if species is None:

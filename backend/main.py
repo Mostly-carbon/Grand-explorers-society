@@ -4,12 +4,20 @@ from fastapi import FastAPI
 
 from routes.species_routes import router as species_router
 from routes.taxa_routes import router as taxa_router
-
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Grand Explorers' Society API",
     description="Production API for the Grand Explorers' Society species archive.",
     version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5500"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

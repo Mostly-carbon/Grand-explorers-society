@@ -1,1 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand Explorer's Society</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 
+<body>
+    <header class="site-header">
+        <div class="container">
+            <p class="eyebrow">Founded 1887</p>
+            <h1>Grand Explorer's Society</h1>
+            <p class="charter">
+                To discover, document, classify, and preserve knowledge
+                of the world's flora and fauna.
+            </p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="archive">
+            <div class="section-heading">
+                <p class="eyebrow">The Catalogue</p>
+                <h2>Species Archive</h2>
+                <p>
+                    Explore the Society's growing record of documented species.
+                </p>
+            </div>
+
+            <div class="search-bar">
+                <label for="species-search">Search the catalogue</label>
+
+                <div class="search-row">
+                    <input
+                        id="species-search"
+                        type="search"
+                        placeholder="Scientific or common name..."
+                    >
+
+                    <button id="search-button" type="button">
+                        Search
+                    </button>
+                </div>
+            </div>
+
+            <div id="catalogue-status" class="status">
+                Loading catalogue...
+            </div>
+
+            <div id="species-list" class="species-grid"></div>
+        </section>
+
+        <section id="species-detail" class="species-detail hidden">
+            <button id="back-button" class="back-button" type="button">
+                ← Return to catalogue
+            </button>
+
+            <div id="detail-content"></div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
