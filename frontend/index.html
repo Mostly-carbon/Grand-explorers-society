@@ -2,65 +2,981 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grand Explorer's Society</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Grand Explorer's Society Natural History Archive"
+    >
+
+    <title>Grand Explorer's Society — Species Archive</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <header class="site-header">
-        <div class="container">
-            <p class="eyebrow">Founded 1887</p>
-            <h1>Grand Explorer's Society</h1>
-            <p class="charter">
-                To discover, document, classify, and preserve knowledge
-                of the world's flora and fauna.
-            </p>
-        </div>
-    </header>
 
-    <main class="container">
-        <section class="archive">
-            <div class="section-heading">
-                <p class="eyebrow">The Catalogue</p>
-                <h2>Species Archive</h2>
-                <p>
-                    Explore the Society's growing record of documented species.
-                </p>
+    <!-- Initial application shell -->
+    <div
+        id="application-loading"
+        class="application-loading"
+        role="status"
+        aria-live="polite"
+    >
+        <div class="loading-mark" aria-hidden="true">
+            GES
+        </div>
+
+        <div class="loading-title">
+            Grand Explorer's Society
+        </div>
+
+        <div class="loading-subtitle">
+            Natural History Archive
+        </div>
+
+        <div class="loading-message">
+            Consulting the catalogue...
+        </div>
+    </div>
+
+
+    <!-- Main application -->
+    <div
+        id="application"
+        class="application hidden"
+    >
+
+        <header class="site-header">
+
+            <div class="site-header-main">
+
+                <div class="site-identity">
+
+                    <a
+                        href="/"
+                        id="home-link"
+                        class="society-mark"
+                        aria-label="Grand Explorer's Society — Species Archive"
+                    >
+                        GES
+                    </a>
+
+                    <div class="site-identity-text">
+
+                        <a
+                            href="/"
+                            id="site-title-link"
+                            class="site-title"
+                        >
+                            Grand Explorer's Society
+                        </a>
+
+                        <div class="site-subtitle">
+                            Natural History Archive
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="site-establishment">
+                    Established 2026
+                </div>
+
             </div>
 
-            <div class="search-bar">
-                <label for="species-search">Search the catalogue</label>
 
-                <div class="search-row">
-                    <input
-                        id="species-search"
-                        type="search"
-                        placeholder="Scientific or common name..."
+            <nav
+                class="site-navigation"
+                aria-label="Primary navigation"
+            >
+
+                <a
+                    href="/"
+                    class="navigation-link navigation-link-current"
+                    data-section="species"
+                    aria-current="page"
+                >
+                    Species
+                </a>
+
+                <a
+                    href="/sources"
+                    class="navigation-link"
+                    data-section="sources"
+                >
+                    Sources
+                </a>
+
+                <a
+                    href="/about"
+                    class="navigation-link"
+                    data-section="about"
+                >
+                    About the Society
+                </a>
+
+                <a
+                    href="/legal"
+                    class="navigation-link"
+                    data-section="legal"
+                >
+                    Legal
+                </a>
+
+            </nav>
+
+        </header>
+
+
+        <main class="site-main">
+
+            <!-- CATALOGUE VIEW -->
+            <section
+                id="catalogue-view"
+                class="catalogue-view"
+                aria-labelledby="catalogue-heading"
+            >
+
+                <header class="catalogue-header">
+
+                    <div class="catalogue-heading-group">
+
+                        <div class="catalogue-kicker">
+                            The Society's Catalogue
+                        </div>
+
+                        <h1
+                            id="catalogue-heading"
+                            class="catalogue-title"
+                        >
+                            Species Archive
+                        </h1>
+
+                        <p class="catalogue-description"></p>
+
+                    </div>
+
+                </header>
+
+
+                <!-- SEARCH -->
+                <section
+                    class="catalogue-search"
+                    aria-labelledby="search-heading"
+                >
+
+                    <div
+                        id="search-heading"
+                        class="search-label"
+                    >
+                        Search catalogue
+                    </div>
+
+                    <form
+                        id="search-form"
+                        class="search-form"
+                        role="search"
                     >
 
-                    <button id="search-button" type="button">
-                        Search
-                    </button>
+                        <div class="search-control">
+
+                            <span
+                                class="search-icon"
+                                aria-hidden="true"
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    width="16"
+                                    height="16"
+                                    focusable="false"
+                                    aria-hidden="true"
+                                >
+                                    <circle
+                                        cx="10.5"
+                                        cy="10.5"
+                                        r="6.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.5"
+                                    ></circle>
+
+                                    <line
+                                        x1="15.5"
+                                        y1="15.5"
+                                        x2="21"
+                                        y2="21"
+                                        stroke="currentColor"
+                                        stroke-width="1.5"
+                                        stroke-linecap="square"
+                                    ></line>
+                                </svg>
+                            </span>
+
+                            <label
+                                for="species-search"
+                                class="visually-hidden"
+                            >
+                                Scientific name or common name
+                            </label>
+
+                            <input
+                                id="species-search"
+                                name="q"
+                                type="search"
+                                class="search-input"
+                                placeholder="Scientific name or common name"
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+
+                        </div>
+
+                        <button
+                            id="search-button"
+                            class="button button-primary"
+                            type="submit"
+                        >
+                            Search
+                        </button>
+
+                    </form>
+
+
+                    <!--
+                        JavaScript controls the progress bar's visibility
+                        and state. The bar is hidden from assistive
+                        technology until a search is in progress.
+                    -->
+                    <div
+                        id="search-progress"
+                        class="search-progress"
+                        role="progressbar"
+                        aria-label="Loading catalogue results"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuetext="Loading catalogue results"
+                        hidden
+                    >
+                        <div
+                            id="search-progress-fill"
+                            class="search-progress-fill"
+                        ></div>
+                    </div>
+
+                </section>
+
+
+                <!-- CATALOGUE STATUS -->
+                <div
+                    id="catalogue-status"
+                    class="catalogue-status"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
+                ></div>
+
+
+                <!-- CATALOGUE CONTENT -->
+                <div
+                    id="catalogue-content"
+                    class="catalogue-content"
+                >
+                    <!-- JavaScript inserts skeleton rows, species
+                         results, empty states, or error states here. -->
                 </div>
+
+
+                <!-- PAGINATION -->
+                <nav
+                    id="catalogue-pagination"
+                    class="catalogue-pagination hidden"
+                    aria-label="Species catalogue pages"
+                    aria-live="polite"
+                >
+
+                    <button
+                        id="previous-page"
+                        class="button button-secondary"
+                        type="button"
+                        disabled
+                    >
+                        Previous
+                    </button>
+
+                    <div
+                        id="pagination-status"
+                        class="pagination-status"
+                        aria-live="polite"
+                        aria-atomic="true"
+                    ></div>
+
+                    <button
+                        id="next-page"
+                        class="button button-secondary"
+                        type="button"
+                        disabled
+                    >
+                        Next
+                    </button>
+
+                </nav>
+
+            </section>
+
+
+            <!-- SPECIES DETAIL VIEW -->
+            <section
+                id="species-detail-view"
+                class="species-detail-view hidden"
+                aria-labelledby="species-detail-heading"
+            >
+
+                <div class="detail-navigation">
+
+                    <button
+                        id="back-button"
+                        class="back-button"
+                        type="button"
+                    >
+                        <span
+                            class="back-arrow"
+                            aria-hidden="true"
+                        >
+                            ←
+                        </span>
+
+                        Return to Species Archive
+                    </button>
+
+                </div>
+
+
+                <!-- Species detail loading state -->
+                <div
+                    id="species-detail-loading"
+                    class="species-detail-loading hidden"
+                    role="status"
+                    aria-live="polite"
+                    aria-label="Loading species record"
+                >
+
+                    <div
+                        class="detail-skeleton-heading"
+                        aria-hidden="true"
+                    ></div>
+
+                    <div
+                        class="detail-skeleton-meta"
+                        aria-hidden="true"
+                    ></div>
+
+                    <div class="detail-skeleton-section">
+
+                        <div
+                            class="detail-skeleton-section-title"
+                            aria-hidden="true"
+                        ></div>
+
+                        <div
+                            class="detail-skeleton-line"
+                            aria-hidden="true"
+                        ></div>
+
+                        <div
+                            class="detail-skeleton-line"
+                            aria-hidden="true"
+                        ></div>
+
+                        <div
+                            class="detail-skeleton-line short"
+                            aria-hidden="true"
+                        ></div>
+
+                    </div>
+
+                    <div class="detail-skeleton-section">
+
+                        <div
+                            class="detail-skeleton-section-title"
+                            aria-hidden="true"
+                        ></div>
+
+                        <div
+                            class="detail-skeleton-line"
+                            aria-hidden="true"
+                        ></div>
+
+                        <div
+                            class="detail-skeleton-line"
+                            aria-hidden="true"
+                        ></div>
+
+                        <div
+                            class="detail-skeleton-line"
+                            aria-hidden="true"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Actual species record -->
+                <article
+                    id="species-detail-content"
+                    class="species-detail-content hidden"
+                >
+                    <!-- Sections are generated by JavaScript in the
+                         established order: Identity, About, Biology,
+                         Classification, Names, Media, People, Sources. -->
+                </article>
+
+
+                <!-- Detail error state -->
+                <div
+                    id="species-detail-error"
+                    class="application-message hidden"
+                    role="alert"
+                >
+
+                    <div class="message-title">
+                        The archive entry could not be retrieved.
+                    </div>
+
+                    <p
+                        id="species-detail-error-message"
+                        class="message-text"
+                    >
+                        The Society's catalogue could not provide this
+                        record at present.
+                    </p>
+
+                    <button
+                        id="detail-retry-button"
+                        class="button button-primary"
+                        type="button"
+                    >
+                        Try Again
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- SOURCES PAGE -->
+            <section
+                id="sources-view"
+                class="static-page-view hidden"
+                aria-labelledby="sources-heading"
+            >
+
+                <header class="static-page-header">
+
+                    <div class="catalogue-kicker">
+                        References &amp; Provenance
+                    </div>
+
+                    <h1
+                        id="sources-heading"
+                        class="catalogue-title"
+                    >
+                        Sources
+                    </h1>
+
+                    <p class="catalogue-description">
+                        The references behind the Society's taxonomic
+                        catalogue and biological observations.
+                    </p>
+
+                </header>
+
+
+                <article class="static-page-content">
+
+                    <section class="static-page-section">
+
+                        <h2>Taxonomy and names</h2>
+
+                        <p>
+                            The archive incorporates taxonomic and
+                            nomenclatural data from the Catalogue of Life.
+                            These records provide the foundation for
+                            scientific names, taxonomic placement,
+                            accepted names and synonym relationships
+                            represented in the catalogue.
+                        </p>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>Biological observations</h2>
+
+                        <p>
+                            Biological trait observations are incorporated
+                            from AnimalTraits and EltonTraits datasets.
+                            The available observations vary by species and
+                            trait; a missing value should not be interpreted
+                            as evidence that a species lacks that
+                            characteristic.
+                        </p>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>Tracing individual records</h2>
+
+                        <p>
+                            Where provenance information is available, an
+                            observation may include its source,
+                            source-record identifier, context, sample size
+                            or notes. These details describe the provenance
+                            supplied with that observation and may not be
+                            available for every record.
+                        </p>
+
+                        <p>
+                            Taxonomic sources and biological observations
+                            serve different purposes. A source supporting
+                            one observation should not automatically be
+                            treated as the authority for every fact
+                            displayed about a species.
+                        </p>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>Limitations and corrections</h2>
+
+                        <p>
+                            Scientific names, classifications and reported
+                            traits can change as research develops. Sources
+                            may differ in their coverage, definitions,
+                            taxonomic concepts and publication dates. The
+                            archive may therefore contain incomplete,
+                            outdated or conflicting information.
+                        </p>
+
+                        <p>
+                            The Society aims to preserve source attribution
+                            where available rather than imply that every
+                            record has been independently verified.
+                        </p>
+
+                    </section>
+
+
+                    <p class="static-page-note">
+                        Source coverage depends on the data incorporated
+                        into the current release. Inclusion in this archive
+                        does not imply endorsement by the original data
+                        providers.
+                    </p>
+
+                </article>
+
+            </section>
+
+
+            <!-- ABOUT THE SOCIETY PAGE -->
+            <section
+                id="about-view"
+                class="static-page-view hidden"
+                aria-labelledby="about-heading"
+            >
+
+                <header class="static-page-header">
+
+                    <div class="catalogue-kicker">
+                        Purpose &amp; Principles
+                    </div>
+
+                    <h1
+                        id="about-heading"
+                        class="catalogue-title"
+                    >
+                        About the Society
+                    </h1>
+
+                    <p class="catalogue-description">
+                        A natural-history archive devoted to the careful
+                        recording and classification of the living world.
+                    </p>
+
+                </header>
+
+
+                <article class="static-page-content">
+
+                    <section class="static-page-section">
+
+                        <h2>Our charter</h2>
+
+                        <blockquote class="society-charter">
+                            To discover, document, classify, and preserve
+                            knowledge of the world's flora and fauna,
+                            with particular attention given to rare,
+                            unusual, and previously undocumented species.
+                        </blockquote>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>A tradition of inquiry</h2>
+
+                        <p>
+                            The Society's presentation draws on the
+                            language and visual traditions of
+                            nineteenth-century natural-history
+                            institutions: field records, taxonomic
+                            catalogues, careful observation and the
+                            preservation of evidence.
+                        </p>
+
+                        <p>
+                            Its historical framing is inspired by the
+                            era's spirit of exploration and scientific
+                            documentation. The catalogue itself is a
+                            modern digital project, designed to bring
+                            together taxonomic information, vernacular
+                            names and biological observations in one
+                            accessible archive.
+                        </p>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>How the archive is organised</h2>
+
+                        <p>
+                            Species records are the archive's primary
+                            focus. Each record brings together available
+                            identity, descriptive, biological,
+                            classification and naming information.
+                            Detail and completeness vary according to
+                            the underlying sources.
+                        </p>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>Historical note</h2>
+
+                        <p>
+                            The Grand Explorer's Society and its 1887
+                            founding narrative are fictional elements
+                            of this project's presentation, not a claim
+                            that a historical institution of that name
+                            existed. The digital archive was developed
+                            as a modern project in 2026.
+                        </p>
+
+                    </section>
+
+                </article>
+
+            </section>
+
+
+            <!-- LEGAL PAGE -->
+            <section
+                id="legal-view"
+                class="static-page-view hidden"
+                aria-labelledby="legal-heading"
+            >
+
+                <header class="static-page-header">
+
+                    <div class="catalogue-kicker">
+                        Terms &amp; Conditions
+                    </div>
+
+                    <h1
+                        id="legal-heading"
+                        class="catalogue-title"
+                    >
+                        Legal
+                    </h1>
+
+                    <p class="catalogue-description">
+                        Conditions governing access to and use of the
+                        Grand Explorer's Society Natural History Archive.
+                    </p>
+
+                    <p class="static-page-note">
+                        Last updated: 11 October 2026
+                    </p>
+
+                </header>
+
+
+                <article class="static-page-content">
+
+                    <section class="static-page-section">
+
+                        <h2>1. Acceptance and scope</h2>
+
+                        <p>
+                            By accessing or using this website, you agree
+                            to these terms. If you do not agree,
+                            discontinue use of the website. These terms
+                            apply to the website and its catalogue unless
+                            a separate written agreement states otherwise.
+                        </p>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>2. Permitted use</h2>
+
+                        <p>
+                            You may browse the archive and use its
+                            publicly displayed information for lawful
+                            research, education and personal reference,
+                            subject to applicable law and the rights
+                            attached to individual datasets and materials.
+                        </p>
+
+                        <p>You must not:</p>
+
+                        <ul>
+                            <li>
+                                Use the website for unlawful, deceptive
+                                or harmful purposes.
+                            </li>
+
+                            <li>
+                                Attempt to gain unauthorised access to
+                                the website, API, database or
+                                infrastructure.
+                            </li>
+
+                            <li>
+                                Interfere with the service, bypass
+                                reasonable access controls or knowingly
+                                introduce malicious code.
+                            </li>
+
+                            <li>
+                                Misrepresent the origin, verification
+                                status or scientific authority of
+                                catalogue records.
+                            </li>
+
+                            <li>
+                                Copy, redistribute or commercially
+                                exploit third-party materials in a way
+                                that violates their licences or
+                                applicable law.
+                            </li>
+                        </ul>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>3. Data, attribution and third-party rights</h2>
+
+                        <p>
+                            The archive incorporates information from
+                            external datasets and references. Such
+                            materials may be subject to separate
+                            copyright, database rights, attribution
+                            requirements, licences or other restrictions.
+                        </p>
+
+                        <p>
+                            Your right to use a particular record or
+                            dataset depends on the terms that apply to
+                            that material. These website terms do not
+                            grant ownership of third-party content or
+                            override its licence. You are responsible
+                            for checking applicable terms before
+                            redistributing or commercially using material.
+                        </p>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>4. Accuracy and availability</h2>
+
+                        <p>
+                            The archive is provided for general
+                            informational, educational and research
+                            reference. Taxonomic names, classifications,
+                            biological observations and other records
+                            may be incomplete, outdated, disputed or
+                            incorrect. Source attribution does not
+                            guarantee that a record is accurate or
+                            independently verified.
+                        </p>
+
+                        <p>
+                            Do not rely on the archive as the sole basis
+                            for decisions requiring authoritative,
+                            current or professionally verified
+                            information. The website and its data may
+                            change, become unavailable or be withdrawn
+                            without notice.
+                        </p>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>5. Intellectual property</h2>
+
+                        <p>
+                            Unless otherwise stated, the website's
+                            original design, text and software are owned
+                            by their respective rights holders.
+                            Third-party names, datasets and materials
+                            remain subject to the rights and terms of
+                            their respective owners or providers.
+                        </p>
+
+                        <p>
+                            Nothing on this website transfers ownership
+                            of intellectual property to you. You may
+                            not imply that the Society or a data provider
+                            endorses your work without permission.
+                        </p>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>6. Disclaimer and limitation of liability</h2>
+
+                        <p>
+                            To the extent permitted by applicable law,
+                            the website and its contents are provided
+                            on an “as is” and “as available” basis,
+                            without guarantees that the service will
+                            be uninterrupted, error-free, complete or
+                            suitable for a particular purpose.
+                        </p>
+
+                        <p>
+                            To the extent permitted by applicable law,
+                            the website operator is not liable for
+                            indirect or consequential loss, loss of
+                            data, loss of profits, or loss arising
+                            from reliance on catalogue information
+                            or interruption of the service.
+                        </p>
+
+                        <p>
+                            Nothing in these terms excludes or limits
+                            liability where that exclusion or limitation
+                            is prohibited by law, or affects any rights
+                            that cannot lawfully be excluded.
+                        </p>
+
+                    </section>
+
+
+                    <section class="static-page-section">
+
+                        <h2>7. Changes and contact</h2>
+
+                        <p>
+                            These terms may be updated as the website
+                            develops. The revised version will be
+                            published on this page with an updated date.
+                            Continued use after an update constitutes
+                            acceptance where permitted by law.
+                        </p>
+
+                        <p>
+                            For questions about these terms, data
+                            attribution or a potential correction,
+                            use the contact method published by the
+                            website operator, if one is provided.
+                        </p>
+
+                    </section>
+
+
+                    <p class="static-page-note">
+                        These terms are a general starting point, not
+                        legal advice or a guarantee against legal claims.
+                        They should be reviewed for the operator's
+                        identity, actual hosting and data practices,
+                        applicable law, and the licences of incorporated
+                        datasets before public launch.
+                    </p>
+
+                </article>
+
+            </section>
+
+        </main>
+
+
+        <!-- FOOTER -->
+        <footer class="site-footer">
+
+            <div class="footer-rule"></div>
+
+            <div class="footer-content">
+
+                <div>
+                    Grand Explorer's Society
+                </div>
+
+                <div>
+                    Natural History Archive
+                </div>
+
+                <div>
+                    Founded 2026
+                </div>
+
             </div>
 
-            <div id="catalogue-status" class="status">
-                Loading catalogue...
-            </div>
+        </footer>
 
-            <div id="species-list" class="species-grid"></div>
-        </section>
+    </div>
 
-        <section id="species-detail" class="species-detail hidden">
-            <button id="back-button" class="back-button" type="button">
-                ← Return to catalogue
-            </button>
 
-            <div id="detail-content"></div>
-        </section>
-    </main>
+    <!-- Offline / connectivity notice -->
+    <div
+        id="connection-notice"
+        class="connection-notice hidden"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+    >
+        You are currently offline.
+    </div>
+
 
     <script src="app.js"></script>
+
 </body>
 </html>

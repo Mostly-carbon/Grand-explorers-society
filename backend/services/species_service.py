@@ -55,9 +55,9 @@ def get_species(
     conditions = []
     parameters = []
 
-    # Search both scientific and vernacular names so the catalogue can be
-    # discovered using either scientific terminology or familiar names.
     if q:
+        search_value = f"%{q}%"
+
         conditions.append(
             """
             (
@@ -72,7 +72,6 @@ def get_species(
             """
         )
 
-        search_value = f"%{q}%"
         parameters.extend([search_value, search_value])
 
     if kingdom:
@@ -105,8 +104,6 @@ def get_species(
     if conditions:
         where_clause = "WHERE " + " AND ".join(conditions)
 
-    # Count the full result set separately so the frontend knows how many
-    # records exist beyond the current page.
     count_query = f"""
         SELECT COUNT(*)
         FROM species s
@@ -114,41 +111,149 @@ def get_species(
         {where_clause}
     """
 
-    count_result = read_from_database(count_query, tuple(parameters))
+    count_result = read_from_database(
+        count_query,
+        tuple(parameters),
+    )
+
     total = count_result[0][0]
 
-    query = f"""
-        SELECT
-            s.id,
-            t.scientific_name,
-            t.scientific_name_authorship,
-            t.rank,
-            t.kingdom,
-            t.taxonomic_status,
-            s.status
-        FROM species s
-        JOIN taxon t ON t.id = s.taxon_id
-        {where_clause}
-        ORDER BY {SORT_COLUMNS[sort]} COLLATE NOCASE {order.upper()}
-        LIMIT ? OFFSET ?
-    """
+    if q:
+        exact_vernacular = """
+            EXISTS (
+                SELECT 1
+                FROM vernacular_name vn
+                WHERE vn.taxon_id = t.id
+                  AND vn.name COLLATE NOCASE = ?
+            )
+        """
 
-    query_parameters = parameters + [limit, offset]
+        exact_scientific = """
+            (
+                t.scientific_name COLLATE NOCASE = ?
+                OR (
+                    t.genus || ' ' || t.specific_epithet
+                ) COLLATE NOCASE = ?
+            )
+        """
 
-    rows = read_from_database(query, tuple(query_parameters))
+        scientific_starts = """
+            t.scientific_name COLLATE NOCASE LIKE ?
+        """
 
-    species = [
-        SpeciesSummary(
-            id=row["id"],
-            scientific_name=row["scientific_name"],
-            scientific_name_authorship=row["scientific_name_authorship"],
-            rank=row["rank"],
-            kingdom=row["kingdom"],
-            taxonomic_status=row["taxonomic_status"],
-            status=row["status"],
+        vernacular_starts = """
+            EXISTS (
+                SELECT 1
+                FROM vernacular_name vn
+                WHERE vn.taxon_id = t.id
+                  AND vn.name COLLATE NOCASE LIKE ?
+            )
+        """
+
+        scientific_contains = """
+            t.scientific_name COLLATE NOCASE LIKE ?
+        """
+
+        vernacular_contains = """
+            EXISTS (
+                SELECT 1
+                FROM vernacular_name vn
+                WHERE vn.taxon_id = t.id
+                  AND vn.name COLLATE NOCASE LIKE ?
+            )
+        """
+
+        relevance_query = f"""
+            CASE
+                WHEN {exact_vernacular} THEN 1
+                WHEN {exact_scientific} THEN 2
+                WHEN {scientific_starts} THEN 3
+                WHEN {vernacular_starts} THEN 4
+                WHEN {scientific_contains} THEN 5
+                WHEN {vernacular_contains} THEN 6
+                ELSE 7
+            END
+        """
+
+        relevance_parameters = [
+            q,
+            q,
+            q,
+            f"{q}%",
+            f"{q}%",
+            f"%{q}%",
+            f"%{q}%",
+        ]
+
+        query_parameters = (
+            parameters
+            + relevance_parameters
+            + [limit, offset]
         )
-        for row in rows
-    ]
+
+        query = f"""
+            SELECT
+                s.id,
+                t.scientific_name,
+                t.scientific_name_authorship,
+                t.rank,
+                t.kingdom,
+                t.taxonomic_status,
+                s.status
+            FROM species s
+            JOIN taxon t ON t.id = s.taxon_id
+            {where_clause}
+            ORDER BY
+                {relevance_query},
+                {SORT_COLUMNS[sort]} COLLATE NOCASE {order.upper()}
+            LIMIT ? OFFSET ?
+        """
+
+    else:
+        query = f"""
+            SELECT
+                s.id,
+                t.scientific_name,
+                t.scientific_name_authorship,
+                t.rank,
+                t.kingdom,
+                t.taxonomic_status,
+                s.status
+            FROM species s
+            JOIN taxon t ON t.id = s.taxon_id
+            {where_clause}
+            ORDER BY
+                {SORT_COLUMNS[sort]} COLLATE NOCASE {order.upper()}
+            LIMIT ? OFFSET ?
+        """
+
+        query_parameters = parameters + [limit, offset]
+
+    rows = read_from_database(
+        query,
+        tuple(query_parameters),
+    )
+
+    species = []
+
+    for row in rows:
+        scientific_name = row["scientific_name"]
+        authorship = row["scientific_name_authorship"]
+
+        if authorship and scientific_name.endswith(authorship):
+            scientific_name = scientific_name[:-len(authorship)].strip()
+
+        species.append(
+            SpeciesSummary(
+                id=row["id"],
+                scientific_name=scientific_name,
+                scientific_name_authorship=authorship,
+                rank=row["rank"],
+                kingdom=row["kingdom"],
+                taxonomic_status=row["taxonomic_status"],
+                status=row["status"],
+            )
+        )
 
     return {
         "total": total,
@@ -229,9 +334,15 @@ def get_species_detail(scientific_name):
         infraspecific_epithet=row["infraspecific_epithet"],
     )
 
+    scientific_name = row["scientific_name"]
+    authorship = row["scientific_name_authorship"]
+
+    if authorship and scientific_name.endswith(authorship):
+        scientific_name = scientific_name[:-len(authorship)].strip()
+
     identity = SpeciesIdentity(
-        scientific_name=row["scientific_name"],
-        scientific_name_authorship=row["scientific_name_authorship"],
+        scientific_name=scientific_name,
+        scientific_name_authorship=authorship,
         taxonomic_status=row["taxonomic_status"],
         rank=row["rank"],
     )
