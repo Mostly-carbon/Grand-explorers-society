@@ -48,11 +48,11 @@ GES follows a data-processing and application architecture that separates source
 
 ## Data Sources and Responsible Use
 
-GES draws on external biodiversity and taxonomic datasets. Data is processed and curated for the archive, but processing does not necessarily change the ownership or licensing conditions of the original material.
+GES incorporates third-party biodiversity, taxonomic, and trait datasets. These sources are processed and curated for use within the archive, but such processing does not automatically change the original rights or licensing conditions.
 
-Source attribution, provenance, and reuse permissions are important considerations in the project's development. Applicable licences and terms may differ between datasets and between types of content, including text, observations, photographs, and illustrations.
+Licensing and attribution requirements may differ between datasets and between content types, including taxonomic records, trait observations, text, photographs, and illustrations.
 
-For details about individual sources and their applicable conditions, see [DATA_SOURCES.md](DATA_SOURCES.md), where available. The project should not be assumed to grant rights to third-party material beyond those permitted by its original terms.
+See [DATA_SOURCES.md](DATA_SOURCES.md) for the sources used, release information, applicable licences, attribution guidance, and processing notes. The project's software licence does not automatically apply to third-party data or other external content.
 
 ## Getting Started
 
