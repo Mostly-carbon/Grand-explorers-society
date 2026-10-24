@@ -16,3 +16,8 @@ __pycache__/
 /backend/data/silver/
 /backend/data/gold/*.tsv
 /backend/data/gold/*.db
+
+# SQLite database sidecar files
+*.db-journal
+*.db-wal
+*.db-shm
