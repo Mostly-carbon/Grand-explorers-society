@@ -1,6 +1,8 @@
-# Handles species queries and assembles product-shaped species responses.
+
+"""Handles species queries and assembles product-shaped species responses."""
 
 from database import read_from_database
+
 from api_models import (
     Classification,
     SpeciesAbout,
@@ -14,7 +16,6 @@ from api_models import (
 
 
 # Only approved database columns can be used for dynamic sorting.
-# User input is mapped through this whitelist rather than inserted into SQL.
 SORT_COLUMNS = {
     "scientific_name": "t.scientific_name",
     "rank": "t.rank",
@@ -22,6 +23,10 @@ SORT_COLUMNS = {
     "taxonomic_status": "t.taxonomic_status",
     "status": "s.status",
 }
+
+# Search results are delivered in batches, with a hard cap across pages.
+MAX_SEARCH_RESULTS = 500
+SEARCH_COUNT_CAP = MAX_SEARCH_RESULTS + 1
 
 
 def get_species(
@@ -43,14 +48,25 @@ def get_species(
             f"Valid options are: {', '.join(SORT_COLUMNS)}"
         )
 
-    if order.lower() not in {"asc", "desc"}:
+    if not isinstance(order, str) or order.lower() not in {"asc", "desc"}:
         raise ValueError("Invalid order. Valid options are: asc, desc")
 
-    if not 1 <= limit <= 200:
+    if (
+        not isinstance(limit, int)
+        or isinstance(limit, bool)
+        or not 1 <= limit <= 200
+    ):
         raise ValueError("Limit must be between 1 and 200")
 
-    if offset < 0:
+    if (
+        not isinstance(offset, int)
+        or isinstance(offset, bool)
+        or offset < 0
+    ):
         raise ValueError("Offset cannot be negative")
+
+    order = order.upper()
+    q = q.strip() if isinstance(q, str) else q
 
     conditions = []
     parameters = []
@@ -71,7 +87,6 @@ def get_species(
             )
             """
         )
-
         parameters.extend([search_value, search_value])
 
     if kingdom:
@@ -100,23 +115,61 @@ def get_species(
         parameters.append(language)
 
     where_clause = ""
-
     if conditions:
         where_clause = "WHERE " + " AND ".join(conditions)
 
-    count_query = f"""
-        SELECT COUNT(*)
-        FROM species s
-        JOIN taxon t ON t.id = s.taxon_id
-        {where_clause}
-    """
+    # Preserve exact totals for unfiltered and non-text-filtered catalogues.
+    # Text searches count at most 501 matches.
+    if q:
+        count_query = f"""
+            SELECT COUNT(*)
+            FROM (
+                SELECT 1
+                FROM species s
+                JOIN taxon t ON t.id = s.taxon_id
+                {where_clause}
+                LIMIT ?
+            )
+        """
+        count_parameters = tuple(parameters + [SEARCH_COUNT_CAP])
+
+    elif not conditions:
+        count_query = "SELECT COUNT(*) FROM species"
+        count_parameters = ()
+
+    else:
+        count_query = f"""
+            SELECT COUNT(*)
+            FROM species s
+            JOIN taxon t ON t.id = s.taxon_id
+            {where_clause}
+        """
+        count_parameters = tuple(parameters)
 
     count_result = read_from_database(
         count_query,
-        tuple(parameters),
+        count_parameters,
     )
-
     total = count_result[0][0]
+
+    # Do not return search records beyond the global cap.
+    # Fetch one extra row to determine whether another batch exists.
+    if q:
+        if offset >= MAX_SEARCH_RESULTS:
+            return {
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "species": [],
+                "has_more": False,
+            }
+
+        fetch_limit = min(
+            limit + 1,
+            MAX_SEARCH_RESULTS - offset + 1,
+        )
+    else:
+        fetch_limit = limit + 1
 
     if q:
         exact_vernacular = """
@@ -188,7 +241,7 @@ def get_species(
         query_parameters = (
             parameters
             + relevance_parameters
-            + [limit, offset]
+            + [fetch_limit, offset]
         )
 
         query = f"""
@@ -205,7 +258,7 @@ def get_species(
             {where_clause}
             ORDER BY
                 {relevance_query},
-                {SORT_COLUMNS[sort]} COLLATE NOCASE {order.upper()}
+                {SORT_COLUMNS[sort]} COLLATE NOCASE {order}
             LIMIT ? OFFSET ?
         """
 
@@ -223,16 +276,30 @@ def get_species(
             JOIN taxon t ON t.id = s.taxon_id
             {where_clause}
             ORDER BY
-                {SORT_COLUMNS[sort]} COLLATE NOCASE {order.upper()}
+                {SORT_COLUMNS[sort]} COLLATE NOCASE {order}
             LIMIT ? OFFSET ?
         """
 
-        query_parameters = parameters + [limit, offset]
+        query_parameters = parameters + [fetch_limit, offset]
 
     rows = read_from_database(
         query,
         tuple(query_parameters),
     )
+
+    # The extra row indicates that another batch exists.
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+
+    # Enforce the global search cap, including the final batch.
+    if q:
+        remaining = MAX_SEARCH_RESULTS - offset
+        rows = rows[:max(0, remaining)]
+
+        has_more = (
+            offset + len(rows) < MAX_SEARCH_RESULTS
+            and has_more
+        )
 
     species = []
 
@@ -260,24 +327,14 @@ def get_species(
         "limit": limit,
         "offset": offset,
         "species": species,
+        "has_more": has_more,
     }
 
 
 def get_species_detail(scientific_name):
     """Build the complete product-shaped species archive."""
 
-    # The catalogue may return the full scientific name including
-    # taxonomic authorship, for example:
-    #
-    #     Panthera leo (Linnaeus, 1758)
-    #
-    # The API should also accept the shorter:
-    #
-    #     Panthera leo
-    #
-    # Extract the base taxonomic name before the authorship so both
-    # forms resolve to the same species.
-
+    # Accept both the scientific name and the name including authorship.
     base_name = scientific_name.split(" (", 1)[0].strip()
 
     query = """
@@ -302,6 +359,7 @@ def get_species_detail(scientific_name):
             t.specific_epithet,
             t.infraspecific_epithet,
             t.taxon_remarks
+
         FROM species s
         JOIN taxon t ON t.id = s.taxon_id
         WHERE

@@ -1,17 +1,22 @@
 /* ============================================================
    GRAND EXPLORER'S SOCIETY
-   Species Archive — Application Foundation
+   Species Archive â€” Application Foundation
    ============================================================ */
+
 
 /* CONFIGURATION */
 const API_BASE_URL = (
-    window.GES_API_BASE_URL || "http://127.0.0.1:8000"
+    window.GES_API_BASE_URL ||
+    (window.location.port === "5500"
+        ? "http://127.0.0.1:8000"
+        : "/api")
 ).replace(/\/+$/, "");
 
 const PAGE_SIZE = 25;
 const CACHE_PREFIX = "ges_species_";
 const CATALOGUE_CACHE_KEY = "ges_catalogue_state";
 const SEARCH_DEBOUNCE_MS = 250;
+
 
 /* DOM REFERENCES */
 const applicationLoading = document.getElementById("application-loading");
@@ -54,7 +59,8 @@ const state = {
     catalogueRequestId: 0,
     detailRequestId: 0,
     searchTimer: null,
-    currentSection: "species"
+    currentSection: "species",
+    hasMore: false,
 };
 
 /* STATIC INFORMATION PAGES */
@@ -811,6 +817,7 @@ async function performSearch(query) {
 
     state.query = cleanText(query);
     state.page = 0;
+    state.hasMore = false;
 
     state.catalogueRequestId += 1;
     state.catalogueLoading = false;
@@ -830,7 +837,7 @@ async function performSearch(query) {
 }
 
 /* CATALOGUE API */
-async function loadCatalogue() {
+async function loadCatalogue(append = false) {
     const requestId = ++state.catalogueRequestId;
     const requestedQuery = state.query;
     const requestedPage = state.page;
@@ -882,8 +889,9 @@ async function loadCatalogue() {
         }
 
         state.total = normalizeNonNegativeInteger(data.total);
+        state.hasMore = data.has_more === true;
 
-        renderCatalogue(data);
+        renderCatalogue(data, false, append);
 
         saveCatalogueCache(
             data,
@@ -898,18 +906,26 @@ async function loadCatalogue() {
 
         console.error("Unable to load catalogue:", error);
 
+        if (append) {
+            state.page = Math.max(0, requestedPage - 1);
+            updateCatalogueHistory();
+        }
+
         handleCatalogueFailure(
             requestedQuery,
             requestedPage
         );
+
     } finally {
         if (requestId === state.catalogueRequestId) {
             state.catalogueLoading = false;
             setCatalogueLoadingState(false);
             updatePagination();
+            updateShowMoreButton();
         }
     }
 }
+
 
 function isValidCatalogueResponse(data) {
     return Boolean(
@@ -1110,7 +1126,8 @@ function updateConnectionState() {
 }
 
 /* CATALOGUE RENDERING */
-function renderCatalogue(data, fromCache = false) {
+
+function renderCatalogue(data, fromCache = false, append = false) {
     if (!catalogueContent) {
         return;
     }
@@ -1123,13 +1140,16 @@ function renderCatalogue(data, fromCache = false) {
 
     updateCatalogueStatus(total, fromCache);
 
-    if (species.length === 0) {
-        renderCatalogueEmpty();
-        updatePagination();
-        return;
+    if (!append) {
+        catalogueContent.replaceChildren();
     }
 
-    catalogueContent.replaceChildren();
+    if (species.length === 0 && !append) {
+        renderCatalogueEmpty();
+        updatePagination();
+        updateShowMoreButton();
+        return;
+    }
 
     const fragment = document.createDocumentFragment();
 
@@ -1138,8 +1158,43 @@ function renderCatalogue(data, fromCache = false) {
     });
 
     catalogueContent.appendChild(fragment);
+
     updatePagination();
+    updateShowMoreButton();
 }
+
+
+function updateShowMoreButton() {
+    let button = document.getElementById("catalogue-show-more");
+
+    if (!button) {
+        button = document.createElement("button");
+        button.id = "catalogue-show-more";
+        button.type = "button";
+        button.className = "text-button";
+        button.textContent = "Show more";
+
+        button.addEventListener("click", async () => {
+            if (state.catalogueLoading || !state.hasMore) {
+                return;
+            }
+
+            state.page += 1;
+            updateCatalogueHistory();
+            await loadCatalogue(true);
+        });
+
+
+    }
+    if (catalogueContent && button.previousElementSibling !== catalogueContent) {
+        catalogueContent.after(button);
+    }
+
+    button.hidden = !state.hasMore;
+    button.disabled = state.catalogueLoading;
+}
+
+
 
 /* CATALOGUE STATUS */
 function updateCatalogueStatus(total, fromCache = false) {
@@ -1151,9 +1206,13 @@ function updateCatalogueStatus(total, fromCache = false) {
     let statusText;
 
     if (state.query) {
-        statusText = count === 1
-            ? "1 record found"
-            : `${formatNumber(count)} records found`;
+        if (count > 500) {
+            statusText = "500+ matching records";
+        } else if (count === 1) {
+            statusText = "1 record found";
+        } else {
+            statusText = `${formatNumber(count)} records found`;
+        }
     } else {
         statusText = count === 1
             ? "1 species recorded"
@@ -1161,11 +1220,12 @@ function updateCatalogueStatus(total, fromCache = false) {
     }
 
     if (fromCache) {
-        statusText += " · cached";
+        statusText += " Â· cached";
     }
 
     catalogueStatus.textContent = statusText;
 }
+
 
 /* SPECIES ROW */
 function createSpeciesRow(speciesRecord) {
@@ -1417,27 +1477,31 @@ function createSkeletonBlock(className) {
 }
 
 /* PAGINATION */
-function updatePagination() {
-    const totalPages = Math.ceil(state.total / state.pageSize);
 
+function updatePagination() {
     if (previousPageButton) {
-        previousPageButton.disabled =
-            state.page <= 0 || state.catalogueLoading;
+        previousPageButton.hidden = true;
+        previousPageButton.disabled = true;
     }
 
     if (nextPageButton) {
-        nextPageButton.disabled =
-            totalPages === 0 ||
-            state.page + 1 >= totalPages ||
-            state.catalogueLoading;
+        nextPageButton.hidden = true;
+        nextPageButton.disabled = true;
     }
 
     if (paginationStatus) {
-        paginationStatus.textContent = state.total === 0
-            ? "Page 0 of 0"
-            : `Page ${state.page + 1} of ${Math.max(1, totalPages)}`;
+        const loadedCount = catalogueContent
+            ? catalogueContent.querySelectorAll(".species-row:not(.species-row-skeleton)").length
+            : 0;
+
+        paginationStatus.textContent = loadedCount > 0
+            ? `${formatNumber(loadedCount)} records displayed`
+            : "No records displayed";
     }
+
+    updateShowMoreButton();
 }
+
 
 async function handlePreviousPage() {
     if (state.page <= 0 || state.catalogueLoading) {
@@ -1695,10 +1759,10 @@ function formatMetadataValue(value) {
         value === undefined ||
         value === ""
     ) {
-        return "—";
+        return "â€”";
     }
 
-    return cleanText(String(value)) || "—";
+    return cleanText(String(value)) || "â€”";
 }
 
 function cleanText(value) {
@@ -1824,7 +1888,7 @@ function createDetailSection(title, content, options = {}) {
         toggle.className = "detail-section-toggle";
 
         toggle.setAttribute("aria-expanded", String(expanded));
-        toggle.textContent = expanded ? "⌃" : "⌄";
+        toggle.textContent = expanded ? "âŒƒ" : "âŒ„";
 
         toggle.setAttribute(
             "aria-label",
@@ -2166,7 +2230,7 @@ function createTraitRow(trait) {
 function formatTraitObservation(trait) {
     const numericValue = trait.value_numeric;
     const textValue = cleanText(trait.value_text);
-    let observation = "—";
+    let observation = "â€”";
 
     if (
         numericValue !== null &&
@@ -2207,7 +2271,7 @@ function formatContext(trait) {
             sampleSize === ""
         )
     ) {
-        return "—";
+        return "â€”";
     }
 
     const parts = [];
@@ -2224,7 +2288,7 @@ function formatContext(trait) {
         parts.push(`n=${formatNumber(sampleSize)}`);
     }
 
-    return parts.join(" · ");
+    return parts.join(" Â· ");
 }
 
 /* CLASSIFICATION */
@@ -2516,7 +2580,7 @@ function toggleExpandableSection(section, toggle) {
         String(newState)
     );
 
-    toggle.textContent = newState ? "⌃" : "⌄";
+    toggle.textContent = newState ? "âŒƒ" : "âŒ„";
 
     toggle.setAttribute(
         "aria-label",
