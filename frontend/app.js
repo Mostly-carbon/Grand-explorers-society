@@ -1885,10 +1885,10 @@ function createDetailSection(title, content, options = {}) {
 
         const toggle = document.createElement("button");
         toggle.type = "button";
-        toggle.className = "detail-section-toggle";
+        toggle.className = "detail-section-toggle section-chevron";
 
         toggle.setAttribute("aria-expanded", String(expanded));
-        toggle.textContent = expanded ? "âŒƒ" : "âŒ„";
+        toggle.classList.toggle("is-expanded", expanded);
 
         toggle.setAttribute(
             "aria-label",
@@ -2291,6 +2291,7 @@ function formatContext(trait) {
     return parts.join(" Â· ");
 }
 
+
 /* CLASSIFICATION */
 function createClassificationSection(classification) {
     if (!classification || typeof classification !== "object") {
@@ -2322,6 +2323,16 @@ function createClassificationSection(classification) {
     const table = document.createElement("table");
     table.className = "classification-table";
 
+    const colgroup = document.createElement("colgroup");
+
+    const labelColumn = document.createElement("col");
+    labelColumn.style.width = "145px";
+
+    const valueColumn = document.createElement("col");
+
+    colgroup.append(labelColumn, valueColumn);
+    table.appendChild(colgroup);
+
     const caption = document.createElement("caption");
     caption.className = "visually-hidden";
     caption.textContent = "Taxonomic classification";
@@ -2352,6 +2363,7 @@ function createClassificationSection(classification) {
         expanded: false
     });
 }
+
 
 /* VERNACULAR NAMES */
 function createNamesSection(names) {
@@ -2557,6 +2569,7 @@ function initializeExpandableSections() {
             if (!toggle) {
                 return;
             }
+            console.count("Expandable listener attached");
 
             toggle.addEventListener("click", () => {
                 toggleExpandableSection(section, toggle);
@@ -2580,7 +2593,9 @@ function toggleExpandableSection(section, toggle) {
         String(newState)
     );
 
-    toggle.textContent = newState ? "âŒƒ" : "âŒ„";
+    toggle.textContent = "";
+    toggle.classList.add("section-chevron");
+    toggle.classList.toggle("is-expanded", newState);
 
     toggle.setAttribute(
         "aria-label",
