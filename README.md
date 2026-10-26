@@ -15,7 +15,7 @@ The project is an ongoing effort to build something useful, and make thoughtful 
 ## Features
 
 - **Species catalogue** — Browse and search a structured archive of species.
-- **Species profiles** — Explore: scientific identity, descriptions, biological traits, classification, and vernacular names where information is available.
+- **Species profiles** — Explore scientific identity, descriptions, biological traits, classification, and vernacular names where information is available.
 - **Multilingual groundwork** — Structured vernacular name data. The multilingual representation is yet to be developed.
 - **Data pipeline** — Separate processing stages prepare, validate, normalize, and curate data before it reaches the production database.
 
@@ -68,8 +68,8 @@ See [DATA_SOURCES.md](DATA_SOURCES.md) for the sources used, release information
 **1. Clone the repository**
 
 ```cmd
-git clone https://github.com/Mostly-carbon/INDIV.git
-cd INDIV
+git clone https://github.com/Mostly-carbon/Grand-explorers-society.git
+cd Grand-explorers-society
 ```
 
 **2. Set up the backend**
@@ -114,17 +114,18 @@ The local development configuration uses the frontend's local address for API ac
 
 ## Current Status
 
-GES is still under development. The production database and core species/taxonomy API have been built, and the frontend is being prepared for release. Deployment, documentation, and additional product features remain part of the ongoing work.
+GES is an early-stage, publicly accessible species archive. Its core catalogue and species-profile interface are operational, while further work remains on performance, data completeness, and additional features.
 
 ## Future Direction
 
-Areas that need development include:
+Areas for further development include:
 
-- Improving multilingual presentation.
-- Adding richer media displays.
-- Continuing to improve data quality, usability, security, and deployment.
+- Improving query performance, particularly for species search and retrieval.
+- Expanding multilingual presentation and vernacular-name selection.
+- Adding richer media displays and source attribution.
+- Improving data quality, usability, security, and deployment reliability.
 - Exploring research-oriented tools once the core archive is stable.
-- Enriching the database.
+- Enriching the catalogue with additional validated data.
 
 ## Licence
 
@@ -132,7 +133,6 @@ The project's code is governed by the terms in [`LICENSE`](LICENSE). Third-party
 
 ## A Note from the Developer
 
-GES is both a natural history project and a practical learning journey. As I progressed further, I treated this project more like a product rather than a collection of coding files.
-
+GES started as a learning project and grew into something much bigger. Along the way, I've learned a lot about data processing, databases, APIs, and frontend development, with a little help from AI. Still learning and improving as I go! :)
 The aim is to keep improving the archive carefully, document its limitations honestly, and make it a useful foundation for further exploration.
 
