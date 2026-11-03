@@ -1,5 +1,19 @@
 # Grand Explorers' Society
 
+## Preview
+
+<p align="center">
+  <img src="docs/images/ges-homepage.png" alt="GES homepage" width="900">
+</p>
+
+<p align="center">
+  <img src="docs/images/ges-species-profile.png" alt="GES species profile" width="900">
+</p>
+
+<p align="center">
+  <a href="https://ges.runs-at.dev">Visit the live website</a>
+</p>
+
 *A natural-history archive for the curious.*
 
 Founded on the spirit of scientific exploration, the Grand Explorers' Society (GES) is a web-based archive dedicated to discovering, documenting, classifying, and preserving knowledge of the world's flora and fauna, with particular attention given to rare, unusual, and previously undocumented species.
