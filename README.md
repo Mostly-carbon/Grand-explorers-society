@@ -10,10 +10,6 @@
   <img src="docs/images/ges-species-profile.png" alt="GES species profile" width="900">
 </p>
 
-<p align="center">
-  <a href="https://ges.runs-at.dev">Visit the live website</a>
-</p>
-
 *A natural-history archive for the curious.*
 
 Founded on the spirit of scientific exploration, the Grand Explorers' Society (GES) is a web-based archive dedicated to discovering, documenting, classifying, and preserving knowledge of the world's flora and fauna, with particular attention given to rare, unusual, and previously undocumented species.
@@ -59,6 +55,7 @@ GES follows a data-processing and application architecture that separates source
 
 **Frontend:** A browser-based interface communicates with the backend to present the archive.
 
+**Deployment:** GES was deployed as a beta application on AWS EC2, with Nginx serving the frontend and the FastAPI backend running on the server. Hosting is currently paused.
 
 ## Data Sources and Responsible Use
 
